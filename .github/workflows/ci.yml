@@ -13,7 +13,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [windows-latest, ubuntu-latest]
+        os: [windows-latest, ubuntu-latest, macos-latest]
 
     steps:
       - name: Checkout
@@ -41,6 +41,13 @@ jobs:
           sudo apt-get install -y lua5.4
           lua5.4 -v
 
+      - name: Install Lua 5.4 (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          brew install lua
+          lua -v
+
       - name: Offline tests (Windows)
         if: runner.os == 'Windows'
         shell: cmd
@@ -50,6 +57,7 @@ jobs:
           "%LUA_EXE%" tests\auth.lua || exit /b 1
           "%LUA_EXE%" tests\plugin.lua || exit /b 1
           "%LUA_EXE%" tests\launcher.lua || exit /b 1
+          "%LUA_EXE%" tests\launcher_run.lua || exit /b 1
           "%LUA_EXE%" tests\import.lua || exit /b 1
           "%LUA_EXE%" tests\graph_setup.lua || exit /b 1
 
@@ -63,5 +71,20 @@ jobs:
           lua5.4 tests/auth.lua
           lua5.4 tests/plugin.lua
           lua5.4 tests/launcher.lua
+          lua5.4 tests/launcher_run.lua
           lua5.4 tests/import.lua
           lua5.4 tests/graph_setup.lua
+
+      - name: Offline tests (macOS)
+        if: runner.os == 'macOS'
+        shell: bash
+        run: |
+          set -e
+          lua tests/run.lua
+          lua tests/download.lua
+          lua tests/auth.lua
+          lua tests/plugin.lua
+          lua tests/launcher.lua
+          lua tests/launcher_run.lua
+          lua tests/import.lua
+          lua tests/graph_setup.lua
