@@ -101,6 +101,24 @@ Linux：
 
 浏览器 loopback 登录目前仅 Windows（PowerShell 回调服务）；Linux 的 `login` 会自动使用设备码。
 
+## Steam（可选，独立脚本）
+
+Steam 支持不在核心 CLI 里，由独立脚本生成「添加非 Steam 游戏」所需字段：
+
+```bat
+lua tools\steam_shortcut.lua --version 1.21.8 --dir .minecraft --java "C:\Java\bin\java.exe"
+```
+
+输出：
+
+- 名称
+- 目标（Lua 可执行文件）
+- 起始位置（实例目录）
+- 启动参数（`src/main.lua launch ...`）
+
+Steam → 库 → 添加非 Steam 游戏 → 浏览选择 Lua 可执行文件，再填入起始位置和启动参数。
+`--json` 可用于外部工具；自动写入 `shortcuts.vdf` 暂未实现。
+
 ## 目录
 
 ```text
