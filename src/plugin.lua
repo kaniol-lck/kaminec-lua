@@ -1,4 +1,4 @@
--- plugin.lua: embeddable Kaminec-Spike API (api_version = 1).
+-- plugin.lua: embeddable Kaminec-Lua API (api_version = 1).
 --
 -- A host (modmanager, a Python/Rust/C++ wrapper, another Lua app) provides a
 -- table of callbacks; this module never calls os.execute/io.popen itself, so it

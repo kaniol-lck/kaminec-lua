@@ -1,4 +1,4 @@
--- main.lua: Kaminec-Spike CLI -- thin wrapper around planner + adapters
+-- main.lua: Kaminec-Lua CLI -- thin wrapper around planner + adapters
 -- usage:
 --   lua src/main.lua versions
 --   lua src/main.lua plan 1.21.8 [--dir .minecraft] [--offline]
@@ -254,7 +254,7 @@ local function cmd_launch(opts, rest)
         print(launcher.redact(cmd))
         return
     end
-    local logpath = util.join(workdir_of(opts), "logs", "kaminec-spike.log")
+    local logpath = util.join(workdir_of(opts), "logs", "kaminec-lua.log")
     util.mkdir(util.dirname(logpath))
     print("launching ...")
     local code = launcher.run(cmd, workdir_of(opts), plan.game_dir, logpath)
@@ -297,7 +297,7 @@ end
 -- Create a personal Azure application via Microsoft Graph (no Azure portal).
 local function cmd_setup_app(opts)
     local workdir = workdir_of(opts)
-    local app, err = graph.setup(http, { name = opts.name or "Kaminec-Spike" })
+    local app, err = graph.setup(http, { name = opts.name or "Kaminec-Lua" })
     if not app then error(err) end
     local path = util.join(workdir, "msa.json")
     util.write(path, json.encode({ client_id = app.app_id }) .. "\n")
@@ -368,7 +368,7 @@ local function main(argv)
     local name = rest[1]
     local fn = name and cmds[name]
     if not fn then
-        print("Kaminec-Spike -- minimal Lua Minecraft launcher")
+        print("Kaminec-Lua -- minimal Lua Minecraft launcher")
         print("usage: lua src/main.lua <versions|login|setup-app|import|accounts|plan|download|launch> [args]")
         print("")
         print("examples:")

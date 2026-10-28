@@ -245,7 +245,7 @@ function M.build(host, workdir, version_id, opts)
     local version_type = docs[1].type or "release"
     local java_version = pick(docs, function(d) return d.javaVersion end)
 
-    local launcher_name = opts.launcher_name or "Kaminec-Spike"
+    local launcher_name = opts.launcher_name or "Kaminec-Lua"
     local launcher_version = opts.launcher_version or "0.1"
 
     local ph = {

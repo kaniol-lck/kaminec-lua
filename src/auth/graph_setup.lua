@@ -85,7 +85,7 @@ end
 -- Create a public client app with a http://localhost redirect URI.
 function M.create_app(httpc, access_token, display_name)
     local payload = {
-        displayName = display_name or "Kaminec-Spike",
+        displayName = display_name or "Kaminec-Lua",
         signInAudience = "AzureADandPersonalMicrosoftAccount",
         publicClient = { redirectUris = { "http://localhost" } },
         isFallbackPublicClient = true,

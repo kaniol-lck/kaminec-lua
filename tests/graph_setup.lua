@@ -35,9 +35,9 @@ local f = fake({
         interval = 1, expires_in = 900,
     }) },
     { 200, json.encode({ access_token = "graph-token" }) },
-    { 201, json.encode({ appId = "app-123", id = "obj-1", displayName = "Kaminec-Spike" }) },
+    { 201, json.encode({ appId = "app-123", id = "obj-1", displayName = "Kaminec-Lua" }) },
 })
-local app, err = graph.setup(f, { sleep = function() end, name = "Kaminec-Spike" })
+local app, err = graph.setup(f, { sleep = function() end, name = "Kaminec-Lua" })
 check("device code request", f.calls[1].url == graph.DEVICE_URL)
 check("graph scope", f.calls[1].payload.scope == graph.SCOPE)
 check("token request", f.calls[2].url == graph.TOKEN_URL)
