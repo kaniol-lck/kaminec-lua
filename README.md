@@ -147,6 +147,27 @@ aria2 任务包含 `dir`、相对 `out`、`url`、`checksum=sha-1=...`、`contin
 外部下载完成后，工具会调用核心 `download --verify --repair` 收尾；也可以手动执行。
 核心不直接调用 aria2，避免把可选依赖带进主程序。
 
+## 服务器（L1/L2，tools）
+
+服务端管理是独立工具，不在客户端核心 CLI 里；当前只支持 vanilla：
+
+```bat
+lua tools\server.lua create 1.21.8 --dir servers\survival --accept-eula --port 25565
+lua tools\server.lua download --dir servers\survival
+lua tools\server.lua start --dir servers\survival
+lua tools\server.lua status --dir servers\survival
+lua tools\server.lua log --dir servers\survival --lines 40
+lua tools\server.lua stop --dir servers\survival
+lua tools\server.lua backup --dir servers\survival
+```
+
+- `create` 生成 `server.json` / `eula.txt` / `server.properties`；不会默认接受 EULA
+- `download` 从 version json 取 `downloads.server`
+- `start` 后台启动，日志写 `logs/latest.log`
+- `stop` 优先 RCON（`tools/rcon.ps1` / `rcon.py`），失败时 `--force` 才强制结束
+- `backup` 要求先停服，打包 `world/`
+- Forge/NeoForge 服务端安装、自动重启、定时备份属于 L3/L4，后续再做
+
 ## Steam（可选，独立脚本）
 
 Steam 支持不在核心 CLI 里，由独立脚本生成「添加非 Steam 游戏」所需字段：

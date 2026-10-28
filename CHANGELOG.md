@@ -11,6 +11,7 @@
 - Forge / NeoForge / Fabric 本地实例启动；Forge 1.12.2 legacy 格式
 - SHA1 校验、`.part` 断点续传、`--repair` / `--verify`
 - 下载任务导出：aria2 input / JSON；`tools/aria2_download.lua` 可选外置下载
+- 服务端 L1/L2 工具：create/download/start/status/log/RCON stop/backup
 - 离线账号、官方启动器 token 导入、Microsoft OAuth 浏览器登录
 - 可嵌入的插件 API（`api_version = 1`）
 - Profile 层：全局 defaults、profile CRUD、`--profile` 下载/启动
