@@ -134,8 +134,8 @@ local function list_dirs(path)
     local f = io.popen(cmd)
     local out = {}
     if f then
-        for line in f:lines() do
-            line = line:gsub("%s+$", "")
+        for raw in f:lines() do
+            local line = raw:gsub("%s+$", "")
             if line ~= "" then out[#out + 1] = line end
         end
         f:close()
