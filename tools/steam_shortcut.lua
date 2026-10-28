@@ -49,8 +49,14 @@ while i <= #arg do
         opts.json = true; i = i + 1
     elseif a == "--hidden" then
         opts.hidden = true; i = i + 1
+    elseif a == "--apply" then
+        opts.apply = true; i = i + 1
+    elseif a == "--force" then
+        opts.force = true; i = i + 1
+    elseif a == "--steam-user" then
+        opts.steam_user = arg[i + 1]; i = i + 2
     elseif a == "--help" or a == "-h" then
-        print("usage: lua tools/steam_shortcut.lua --version <id> --dir <instance> [--java <java>] [--username <name>] [--target <lua>] [--online] [--hidden] [--json]")
+        print("usage: lua tools/steam_shortcut.lua --version <id> --dir <instance> [--java <java>] [--username <name>] [--target <lua>] [--online] [--hidden] [--apply] [--steam-user <id>] [--force] [--json]")
         os.exit(0)
     else
         io.stderr:write("unknown argument: " .. tostring(a) .. "\n")
@@ -147,6 +153,128 @@ local result = {
     hidden = hidden_files ~= nil,
 }
 
+local function crc32(s)
+    local function table_crc()
+        local t = {}
+        for i = 0, 255 do
+            local c = i
+            for _ = 1, 8 do
+                if (c & 1) ~= 0 then c = 0xEDB88320 ~ (c >> 1) else c = c >> 1 end
+            end
+            t[i] = c
+        end
+        return t
+    end
+    local t = table_crc()
+    local c = 0xFFFFFFFF
+    for i = 1, #s do c = t[(c ~ s:byte(i)) & 0xFF] ~ (c >> 8) end
+    return (~c) & 0xFFFFFFFF
+end
+
+local function steam_root()
+    local f = io.popen('reg query "HKCU\\Software\\Valve\\Steam" /v SteamPath 2>nul')
+    if not f then return nil end
+    local out = f:read("a"); f:close()
+    local p = out:match("SteamPath%s+REG_SZ%s+([^\r\n]+)")
+    return p and p:gsub("\\", "/") or nil
+end
+
+local function steam_running()
+    local f = io.popen('tasklist /FI "IMAGENAME eq steam.exe" /NH 2>nul')
+    if not f then return false end
+    local out = f:read("a"); f:close()
+    return out:lower():find("steam.exe", 1, true) ~= nil
+end
+
+local function apply_shortcut()
+    if not util.IS_WINDOWS then error("--apply is Windows-only") end
+    if steam_running() and not opts.force then
+        error("Steam 正在运行；请先完全退出 Steam（含托盘），或加 --force")
+    end
+    local root = steam_root()
+    if not root then error("找不到 Steam 安装目录") end
+    local users = {}
+    local f = io.popen('dir /b /ad "' .. root:gsub("/", "\\") .. '\\userdata" 2>nul')
+    if f then
+        for line in f:lines() do
+            if line:match("^%d+$") then users[#users + 1] = line end
+        end
+        f:close()
+    end
+    if #users == 0 then error("没有 Steam 用户目录；先登录一次 Steam") end
+    local user = opts.steam_user or users[1]
+    local path = root .. "/userdata/" .. user .. "/config/shortcuts.vdf"
+    local data = util.exists(path) and util.read(path) or ""
+    local quoted_exe = '"' .. target_display .. '"'
+    local appid = (crc32(quoted_exe .. shortcut_name) | 0x80000000) & 0xFFFFFFFF
+    local long_appid = (appid << 32) | 0x02000000
+    result.appid = appid
+    result.long_appid = long_appid
+    result.long_appid_text = string.format("%u", long_appid)
+    result.steam_shortcut = path
+    result.steam_user = user
+    if data:find(shortcut_name .. "\0", 1, true) then
+        result.already = true
+        return
+    end
+
+    local function cs(v) return v .. "\0" end
+    local function st(k, v) return "\1" .. cs(k) .. cs(v) end
+    local function it(k, v) return "\2" .. cs(k) .. string.pack("<I4", v & 0xFFFFFFFF) end
+    local key = "0"
+    if data ~= "" then
+        local n = 0
+        while data:find("\0" .. tostring(n) .. "\0", 1, true) do n = n + 1 end
+        key = tostring(n)
+    end
+    local launch_raw = hidden_files and hidden_files.vbs or launch_options
+    local entry = "\0" .. cs(key)
+        .. it("appid", appid)
+        .. st("AppName", shortcut_name)
+        .. st("Exe", quoted_exe)
+        .. st("StartDir", instance_display)
+        .. st("icon", "")
+        .. st("ShortcutPath", "")
+        .. st("LaunchOptions", launch_raw)
+        .. it("IsHidden", 0)
+        .. it("AllowDesktopConfig", 1)
+        .. it("AllowOverlay", 1)
+        .. it("OpenVR", 0)
+        .. it("Devkit", 0)
+        .. st("DevkitGameID", "")
+        .. it("DevkitOverrideAppID", 0)
+        .. it("LastPlayTime", 0)
+        .. st("FlatpakAppID", "")
+        .. st("sortas", "")
+        .. "\0" .. cs("tags") .. "\8"
+        .. "\8"
+    local new
+    if data == "" then
+        new = "\0" .. cs("shortcuts") .. entry .. "\8\8"
+    else
+        new = data:sub(1, -3) .. entry .. data:sub(-2)
+    end
+    local backup
+    if util.exists(path) then
+        backup = path .. ".bak-" .. os.date("%Y%m%d-%H%M%S")
+        util.write(backup, data)
+    end
+    local tmp = path .. ".tmp"
+    util.write(tmp, new)
+    os.remove(path)
+    local ok, err = os.rename(tmp, path)
+    if not ok then error("写 shortcuts.vdf 失败: " .. tostring(err)) end
+    result.backup = backup
+end
+
+if opts.apply then
+    local ok, err = pcall(apply_shortcut)
+    if not ok then
+        io.stderr:write("apply failed: " .. tostring(err) .. "\n")
+        os.exit(1)
+    end
+end
+
 if opts.json then
     print(json.encode(result))
     os.exit(0)
@@ -161,6 +289,18 @@ print("启动参数:   " .. launch_options_display)
 if hidden_files then
     print("隐藏窗口:   已生成 " .. hidden_files.cmd)
     print("            和 " .. hidden_files.vbs)
+end
+if opts.apply then
+    print("Steam 配置:  " .. tostring(result.steam_shortcut))
+    print("AppID:       " .. tostring(result.appid))
+    if result.long_appid_text then
+        print("Long AppID:  " .. result.long_appid_text)
+    end
+    if result.already then
+        print("状态:        已存在，未重复添加")
+    elseif result.backup then
+        print("备份:        " .. result.backup)
+    end
 end
 print("")
 if hidden_files then

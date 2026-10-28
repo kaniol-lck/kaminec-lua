@@ -111,7 +111,13 @@ lua tools\steam_shortcut.lua --version 1.21.8 --dir .minecraft --java "C:\Java\b
 
 :: 隐藏窗口（生成 wscript + 隐藏 cmd wrapper，不显示 Lua/Java 终端）
 lua tools\steam_shortcut.lua --version 1.21.8 --dir .minecraft --java "C:\Java\bin\java.exe" --hidden
+
+:: 直接写入 Steam（先完全退出 Steam；会备份 shortcuts.vdf）
+lua tools\steam_shortcut.lua --version 1.21.8 --dir .minecraft --java "C:\Java\bin\java.exe" --hidden --apply
 ```
+
+`--apply` 会输出 `Long AppID`，可用
+`steam://rungameid/<Long AppID>` 启动；重复执行按名称去重。
 
 输出：
 
@@ -122,7 +128,6 @@ lua tools\steam_shortcut.lua --version 1.21.8 --dir .minecraft --java "C:\Java\b
 
 Steam → 库 → 添加非 Steam 游戏 → 浏览选择上面的目标，再填入起始位置和启动参数。
 `--hidden` 会在实例目录生成 `steam-launch-<版本>.cmd/.vbs`；`--json` 可用于外部工具。
-自动写入 `shortcuts.vdf` 暂未实现。
 
 ## 目录
 
