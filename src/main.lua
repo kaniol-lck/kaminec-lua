@@ -32,6 +32,7 @@ local account = require("account")
 local download = require("download")
 local natives = require("natives")
 local profile = require("profile")
+local java = require("java")
 local http = require("http")
 local accounts = require("accounts")
 local auth = require("login")
@@ -79,8 +80,11 @@ local function resolve_profile(opts)
     opts.game_dir = p.game_dir
     opts.natives_dir = p.natives_dir
     opts.version = p.version
+    local explicit_java = opts.java
     opts.memory = opts.memory or eff.memory
     opts.java = opts.java or eff.java
+    if opts.java == "auto" then opts.java_auto = true end
+    if not explicit_java then opts.java_auto = opts.java_auto or eff.java_auto end
     opts.account = opts.account or eff.account
     opts.name = opts.name or eff.username
     opts._profile = p
@@ -185,6 +189,27 @@ local function build_plan(host, opts, rest, with_downloads)
     end
 
     local plan = planner.build(host, workdir, id, opts)
+    local required_java = plan.java_version and tonumber(plan.java_version.majorVersion)
+    if required_java then
+        if not opts.java or opts.java == "auto" or opts.java_auto then
+            local selected = java.select(required_java)
+            if selected then
+                opts.java = selected.path
+                print("  java: " .. java.describe(selected))
+            else
+                opts.java_mismatch = "没有找到 Java " .. tostring(required_java) .. "；请用 --java 指定"
+                print("  warning: " .. opts.java_mismatch)
+            end
+        else
+            local ok, info = java.validate(opts.java, required_java)
+            if not ok then
+                opts.java_mismatch = info
+                print("  warning: " .. info)
+            else
+                print("  java: " .. java.describe(info))
+            end
+        end
+    end
     summarize(plan)
 
     if with_downloads then
@@ -337,6 +362,9 @@ local function cmd_launch(opts, rest)
     local host = adapters.cli()
     -- dry-run must stay offline: never download just to print the command
     local plan = build_plan(host, opts, rest, not opts["dry-run"])
+    if opts.java_mismatch and not opts["ignore-java-check"] then
+        error(opts.java_mismatch .. "（如确认要覆盖，加 --ignore-java-check）")
+    end
 
     util.mkdir(plan.natives_dir)
     util.mkdir(plan.game_dir)
@@ -474,6 +502,7 @@ local function cmd_profile(opts, rest)
             if opts.memory then s.memory = opts.memory end
             if opts.account then s.account = opts.account end
             if opts.username then s.username = opts.username end
+            if opts["java-auto"] then s.java_auto = true end
             return s
         end
         if opts["from-existing"] then
@@ -539,6 +568,7 @@ local function cmd_profile(opts, rest)
         for _, k in ipairs({ "java", "memory", "account", "username" }) do
             if opts[k] then store.defaults[k] = opts[k]; changed = true end
         end
+        if opts["java-auto"] then store.defaults.java_auto = true; changed = true end
         if changed then
             profile.save(root, store)
             print("updated defaults in " .. profile.path(root))
@@ -565,6 +595,7 @@ local function cmd_profile(opts, rest)
         for _, k in ipairs({ "java", "memory", "account", "username" }) do
             if eff[k] then print("  " .. k .. " = " .. tostring(eff[k])) end
         end
+        if eff.java_auto then print("  java_auto = true") end
         return
     end
 
@@ -577,6 +608,8 @@ local function cmd_profile(opts, rest)
         for _, k in ipairs({ "java", "memory", "account", "username" }) do
             if opts[k] then p.settings[k] = opts[k] end
         end
+        if opts["java-auto"] then p.settings.java_auto = true end
+        if opts["no-java-auto"] then p.settings.java_auto = nil end
         profile.save(root, store)
         print("updated profile " .. tostring(id))
         return
@@ -599,6 +632,28 @@ local function cmd_profile(opts, rest)
     error("usage: profile <list|create|show|edit|delete|import|defaults> ...")
 end
 
+local function cmd_java(opts, rest)
+    local sub = rest[1] or "list"
+    if sub == "list" or sub == "discover" then
+        local list = java.discover()
+        if #list == 0 then
+            print("(no Java found; set --java or install one)")
+            return
+        end
+        for _, j in ipairs(list) do print("  " .. java.describe(j)) end
+        return
+    end
+    if sub == "detect" then
+        local path = rest[2] or opts.path
+        if not path then error("usage: java detect <path>") end
+        local info = java.detect(path)
+        if not info then error("无法识别 Java: " .. tostring(path)) end
+        print(java.describe(info))
+        return
+    end
+    error("usage: java <list|detect <path>>")
+end
+
 local cmds = {
     versions = cmd_versions,
     login = cmd_login,
@@ -606,6 +661,7 @@ local cmds = {
     import = cmd_import,
     accounts = cmd_accounts,
     profile = cmd_profile,
+    java = cmd_java,
     plan = cmd_plan,
     download = cmd_download,
     launch = cmd_launch,
@@ -617,7 +673,7 @@ local function main(argv)
     local fn = name and cmds[name]
     if not fn then
         print("Kaminec-Lua -- minimal Lua Minecraft launcher")
-        print("usage: lua src/main.lua <versions|login|setup-app|import|accounts|profile|plan|download|launch> [args]")
+        print("usage: lua src/main.lua <versions|login|setup-app|import|accounts|profile|java|plan|download|launch> [args]")
         print("")
         print("examples:")
         print("  lua src/main.lua import --dir .minecraft --yes")

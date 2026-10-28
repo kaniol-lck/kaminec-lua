@@ -101,6 +101,25 @@ Linux：
 
 浏览器 loopback 登录目前仅 Windows（PowerShell 回调服务）；Linux 的 `login` 会自动使用设备码。
 
+## Java 版本
+
+启动器会从 version json 读取所需 Java 主版本，并自动选择已安装 Java：
+
+```bat
+:: 列出发现的 Java
+kaminec.bat java list
+
+:: 按 profile 自动选择；也可显式指定
+kaminec.bat profile create 1.21.8 --dir .minecraft --java-auto
+kaminec.bat launch --profile vanilla-1-21-8 --dir .minecraft
+kaminec.bat launch 1.12.2 --dir .minecraft --java "C:\Java\jre8\bin\java.exe"
+```
+
+- 优先精确匹配 `javaVersion.majorVersion`；没有精确版本时选最接近的新版本（如用 Java 23 跑要求 21 的版本）
+- 低于要求的 Java 会报错；显式指定不匹配路径时 `launch` 会失败，可加 `--ignore-java-check` 覆盖
+- 扫描 `JAVA_HOME`、PATH、Program Files/Java、Adoptium、Microsoft、Zulu、Corretto、`/usr/lib/jvm`、SDKMAN 等常见位置
+- 暂不自动下载 Java；`tools/java.lua` 下载功能后续再做
+
 ## Profile 与全局设置
 
 launcher 根目录的 `profiles.json` 保存全局 `defaults` 和每个 profile：
