@@ -1,0 +1,23 @@
+# runtime instances / caches
+.minecraft/
+.minecraft-*/
+cache/
+logs/
+verification/
+notes/
+reports/
+docs/dev/
+
+# downloads / plans
+*.part
+plan.json
+*.plan.json
+
+# logs
+*.log
+hs_err_pid*.log
+replay_pid*.log
+
+# test scratch
+tests/tmp/
+tests/tmp-*/

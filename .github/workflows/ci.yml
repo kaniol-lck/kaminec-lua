@@ -1,0 +1,37 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  windows:
+    name: Windows / Lua 5.4
+    runs-on: windows-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Lua 5.4 (MSYS2)
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MINGW64
+          install: mingw-w64-x86_64-lua
+
+      - name: Show Lua version
+        shell: cmd
+        run: C:\msys64\mingw64\bin\lua.exe -v
+
+      - name: Offline tests
+        shell: cmd
+        run: |
+          C:\msys64\mingw64\bin\lua.exe tests\run.lua || exit /b 1
+          C:\msys64\mingw64\bin\lua.exe tests\download.lua || exit /b 1
+          C:\msys64\mingw64\bin\lua.exe tests\auth.lua || exit /b 1
+          C:\msys64\mingw64\bin\lua.exe tests\plugin.lua || exit /b 1
+          C:\msys64\mingw64\bin\lua.exe tests\launcher.lua || exit /b 1
+          C:\msys64\mingw64\bin\lua.exe tests\import.lua || exit /b 1
+          C:\msys64\mingw64\bin\lua.exe tests\graph_setup.lua || exit /b 1

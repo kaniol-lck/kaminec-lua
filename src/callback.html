@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kaminec 登录</title>
+<style>
+  :root { color-scheme: light; }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100vh; display: flex; align-items: center; justify-content: center;
+    padding: 24px; color: #111827;
+    background: linear-gradient(160deg, #f8fafc 0%, #eef2f9 100%);
+    font-family: "Segoe UI", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+  }
+  .card {
+    width: min(420px, 100%); padding: 32px 28px; text-align: center;
+    background: #fff; border: 1px solid #e5e7eb; border-radius: 20px;
+    box-shadow: 0 18px 50px rgba(15, 23, 42, .08);
+  }
+  .brand {
+    margin-bottom: 22px; font-size: 12px; font-weight: 700; letter-spacing: .08em;
+    text-transform: uppercase; color: #6b7280;
+  }
+  .icon {
+    width: 64px; height: 64px; margin: 0 auto 18px; border-radius: 50%;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 30px; font-weight: 700;
+  }
+  .success .icon { background: #ecfdf5; color: #16a34a; }
+  .error .icon { background: #fef2f2; color: #dc2626; }
+  .success-only, .error-only { display: none; }
+  body.success .success-only { display: block; }
+  body.error .error-only { display: block; }
+  h1 { margin: 0 0 10px; font-size: 22px; }
+  .msg { margin: 0 0 20px; font-size: 14px; line-height: 1.7; color: #6b7280; }
+  .detail {
+    display: none; margin: 0 0 18px; padding: 12px; text-align: left;
+    background: #f9fafb; border: 1px solid #e5e7eb; border-radius: 10px;
+    color: #374151; font-size: 12px; line-height: 1.5;
+    white-space: pre-wrap; word-break: break-word; max-height: 160px; overflow: auto;
+  }
+  .detail.show { display: block; }
+  button {
+    width: 100%; padding: 13px 16px; border: 0; border-radius: 12px;
+    background: #111827; color: #fff; font-size: 15px; font-weight: 600; cursor: pointer;
+  }
+  button:hover { background: #1f2937; }
+  .hint { margin: 14px 0 0; font-size: 12px; color: #9ca3af; }
+</style>
+</head>
+<body class="{{STATE}}">
+  <main class="card">
+    <div class="brand">Kaminec</div>
+    <div class="icon success-only">&#10003;</div>
+    <div class="icon error-only">!</div>
+    <h1 class="success-only">授权完成</h1>
+    <h1 class="error-only">登录未完成</h1>
+    <p class="msg success-only">已收到 Microsoft 授权，可以关闭此页面回到启动器。</p>
+    <p class="msg error-only">授权没有完成。请回到启动器重试，或查看下方详情。</p>
+    <pre class="detail {{DETAIL_CLASS}}">{{DETAIL}}</pre>
+    <button type="button" onclick="window.close()">关闭页面</button>
+    <p class="hint">如果按钮无效，直接关闭此标签页。</p>
+  </main>
+</body>
+</html>

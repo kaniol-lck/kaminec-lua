@@ -1,0 +1,29 @@
+# Changelog
+
+本项目从 0.1.0 开始记录。格式参考 [Keep a Changelog](https://keepachangelog.com/)，版本号遵循 SemVer。
+
+## [0.1.0] - 2026-10-28
+
+### Added
+
+- Lua 5.4 CLI：`versions` / `plan` / `download` / `launch`
+- 现代 version json：rules、arguments、classifier、Maven `url`、asset index
+- Forge / NeoForge / Fabric 本地实例启动；Forge 1.12.2 legacy 格式
+- SHA1 校验、`.part` 断点续传、`--repair` / `--verify`
+- 离线账号、官方启动器 token 导入、Microsoft OAuth 浏览器登录
+- 可嵌入的插件 API（`api_version = 1`）
+- 回调页成功/失败两态与基础样式
+
+### Fixed
+
+- Windows 下 `cmd.exe` 引号与工作目录问题
+- 资源下载路径中的反斜杠转义问题
+- 回调页 UTF-8 乱码
+- 启动命令/计划输出中的 access token 脱敏
+
+### Known limitations
+
+- 仅支持 Windows
+- 微软登录需要自己的 Azure client id；新应用需 Minecraft API 审核
+- `login --live` 不可用（Xbox Live 401）
+- 不自动下载/管理 Java，需用户提供 `--java` 或 PATH 中的 `java`
