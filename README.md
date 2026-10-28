@@ -130,6 +130,23 @@ kaminec.bat profile import --from official --dir .minecraft --yes
 导入的 profile 标记 `external=true`，只读引用外部实例，删除 profile 不会删除源目录。
 第三方启动器（Prism/HMCL/ATLauncher）导入以后放到 `tools/`，不在核心 CLI 内。
 
+## 下载任务导出 / aria2（可选）
+
+核心启动器保持 curl-only；可以导出任务列表交给 aria2 等外部下载器：
+
+```bat
+:: 导出缺失文件（aria2 input + JSON）
+kaminec.bat download 1.21.8 --dir .minecraft --export-aria2 aria2-tasks.txt
+kaminec.bat download 1.21.8 --dir .minecraft --export-json aria2-tasks.json
+
+:: 或使用工具：导出 -> aria2c -> 核心 verify/repair
+lua tools\aria2_download.lua --version 1.21.8 --dir .minecraft --jobs 16
+```
+
+aria2 任务包含 `dir`、相对 `out`、`url`、`checksum=sha-1=...`、`continue=true`。
+外部下载完成后，工具会调用核心 `download --verify --repair` 收尾；也可以手动执行。
+核心不直接调用 aria2，避免把可选依赖带进主程序。
+
 ## Steam（可选，独立脚本）
 
 Steam 支持不在核心 CLI 里，由独立脚本生成「添加非 Steam 游戏」所需字段：

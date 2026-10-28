@@ -54,6 +54,7 @@ jobs:
         run: |
           "%LUA_EXE%" tests\run.lua || exit /b 1
           "%LUA_EXE%" tests\download.lua || exit /b 1
+          "%LUA_EXE%" tests\download_export.lua || exit /b 1
           "%LUA_EXE%" tests\auth.lua || exit /b 1
           "%LUA_EXE%" tests\plugin.lua || exit /b 1
           "%LUA_EXE%" tests\launcher.lua || exit /b 1
@@ -70,6 +71,7 @@ jobs:
           set -e
           lua5.4 tests/run.lua
           lua5.4 tests/download.lua
+          lua5.4 tests/download_export.lua
           lua5.4 tests/auth.lua
           lua5.4 tests/plugin.lua
           lua5.4 tests/launcher.lua
@@ -86,6 +88,7 @@ jobs:
           set -e
           lua tests/run.lua
           lua tests/download.lua
+          lua tests/download_export.lua
           lua tests/auth.lua
           lua tests/plugin.lua
           lua tests/launcher.lua
