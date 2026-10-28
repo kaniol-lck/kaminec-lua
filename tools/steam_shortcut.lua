@@ -26,6 +26,7 @@ local util = require("util")
 local json = require("json")
 local adapters = require("adapters")
 local planner = require("planner")
+local profile = require("profile")
 
 local opts = { username = "Steve", dir = ".minecraft" }
 local i = 1
@@ -55,8 +56,10 @@ while i <= #arg do
         opts.force = true; i = i + 1
     elseif a == "--steam-user" then
         opts.steam_user = arg[i + 1]; i = i + 2
+    elseif a == "--profile" then
+        opts.profile = arg[i + 1]; i = i + 2
     elseif a == "--help" or a == "-h" then
-        print("usage: lua tools/steam_shortcut.lua --version <id> --dir <instance> [--java <java>] [--username <name>] [--target <lua>] [--online] [--hidden] [--apply] [--steam-user <id>] [--force] [--json]")
+        print("usage: lua tools/steam_shortcut.lua (--version <id> [--dir <instance>] | --profile <id> --dir <root>) [--java <java>] [--username <name>] [--target <lua>] [--online] [--hidden] [--apply] [--steam-user <id>] [--force] [--json]")
         os.exit(0)
     else
         io.stderr:write("unknown argument: " .. tostring(a) .. "\n")
@@ -64,18 +67,45 @@ while i <= #arg do
     end
 end
 
-if not opts.version then
-    io.stderr:write("--version is required\n")
+if not opts.version and not opts.profile then
+    io.stderr:write("--version or --profile is required\n")
     os.exit(2)
 end
 
 local instance = util.abs(opts.dir)
-local ok, plan = pcall(planner.build, adapters.cli(), instance, opts.version, {
-    offline = not opts.online,
-})
-if not ok then
-    io.stderr:write("build plan failed: " .. tostring(plan) .. "\n")
-    os.exit(1)
+local startdir = instance
+local version_id = opts.version
+local profile_id = opts.profile
+local profile_obj
+
+if profile_id then
+    local store = profile.load(instance)
+    local p = profile.find(store, profile_id)
+    if not p then
+        io.stderr:write("profile 不存在: " .. tostring(profile_id) .. "\n")
+        os.exit(1)
+    end
+    profile_obj = p
+    version_id = p.version
+    startdir = p.game_dir
+    local proot = p.root or instance
+    local ok, plan = pcall(planner.build, adapters.cli(), proot, version_id, {
+        offline = not opts.online,
+        game_dir = p.game_dir,
+        natives_dir = p.natives_dir,
+    })
+    if not ok then
+        io.stderr:write("build plan failed: " .. tostring(plan) .. "\n")
+        os.exit(1)
+    end
+else
+    local ok, plan = pcall(planner.build, adapters.cli(), instance, version_id, {
+        offline = not opts.online,
+    })
+    if not ok then
+        io.stderr:write("build plan failed: " .. tostring(plan) .. "\n")
+        os.exit(1)
+    end
 end
 
 local target = opts.target or os.getenv("LUA") or arg[-1]
@@ -98,7 +128,14 @@ if not target then
 end
 
 local java = opts.java or "java"
-local shortcut_name = opts.name or ("Minecraft " .. opts.version .. " (Kaminec-Lua)")
+local shortcut_name
+if opts.name then
+    shortcut_name = opts.name
+elseif profile_obj then
+    shortcut_name = profile_obj.name
+else
+    shortcut_name = "Minecraft " .. tostring(version_id) .. " (Kaminec-Lua)"
+end
 
 local function q(s) return util.quote(s) end
 local function native_path(p)
@@ -108,11 +145,19 @@ end
 local repo_root = util.abs(root):gsub("/%./", "/"):gsub("/%.$", "")
 local main_script = native_path(util.join(repo_root, "src/main.lua"))
 local instance_display = native_path(instance)
+local startdir_display = native_path(startdir)
 local target_display = native_path(target)
 local java_display = native_path(java)
-local args = { q(main_script), "launch", opts.version, "--dir", q(instance_display) }
+local args
+if profile_id then
+    args = { q(main_script), "launch", "--profile", q(profile_id), "--dir", q(instance_display) }
+else
+    args = { q(main_script), "launch", tostring(version_id), "--dir", q(instance_display) }
+end
 if not opts.online then args[#args + 1] = "--offline" end
-args[#args + 1] = "--name"; args[#args + 1] = q(opts.username)
+if not profile_id then
+    args[#args + 1] = "--name"; args[#args + 1] = q(opts.username)
+end
 if opts.java then args[#args + 1] = "--java"; args[#args + 1] = q(java_display) end
 local launch_options = table.concat(args, " ")
 
@@ -126,11 +171,11 @@ if opts.hidden then
         io.stderr:write("--hidden is Windows-only (wscript wrapper)\n")
         os.exit(2)
     end
-    local safe_version = opts.version:gsub("[^%w%._-]", "_")
-    local cmd_path = util.join(instance, "steam-launch-" .. safe_version .. ".cmd")
-    local vbs_path = util.join(instance, "steam-launch-" .. safe_version .. ".vbs")
+    local safe_key = tostring(profile_id or version_id):gsub("[^%w%._-]", "_")
+    local cmd_path = util.join(instance, "steam-launch-" .. safe_key .. ".cmd")
+    local vbs_path = util.join(instance, "steam-launch-" .. safe_key .. ".vbs")
     local lua_target = target_display
-    util.write(cmd_path, "@echo off\r\ncd /d " .. q(instance_display) .. "\r\n"
+    util.write(cmd_path, "@echo off\r\ncd /d " .. q(startdir_display) .. "\r\n"
         .. q(lua_target) .. " " .. launch_options .. "\r\n")
     local windir = os.getenv("SystemRoot") or "C:\\Windows"
     local wscript = native_path(windir .. "\\System32\\wscript.exe")
@@ -145,9 +190,10 @@ end
 local result = {
     name = shortcut_name,
     target = target_display,
-    startdir = instance_display,
+    startdir = startdir_display,
     launch_options = launch_options_display,
-    version = opts.version,
+    version = version_id,
+    profile = profile_id,
     instance = instance_display,
     username = opts.username,
     hidden = hidden_files ~= nil,
@@ -232,7 +278,7 @@ local function apply_shortcut()
         .. it("appid", appid)
         .. st("AppName", shortcut_name)
         .. st("Exe", quoted_exe)
-        .. st("StartDir", instance_display)
+        .. st("StartDir", startdir_display)
         .. st("icon", "")
         .. st("ShortcutPath", "")
         .. st("LaunchOptions", launch_raw)

@@ -142,6 +142,9 @@ lua tools\steam_shortcut.lua --version 1.21.8 --dir .minecraft --java "C:\Java\b
 
 :: 直接写入 Steam（先完全退出 Steam；会备份 shortcuts.vdf）
 lua tools\steam_shortcut.lua --version 1.21.8 --dir .minecraft --java "C:\Java\bin\java.exe" --hidden --apply
+
+:: 按 profile（名称/StartDir/启动参数都来自 profile）
+lua tools\steam_shortcut.lua --profile steamprof --dir .minecraft --hidden --apply
 ```
 
 `--apply` 会输出 `Long AppID`，可用
