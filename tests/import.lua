@@ -1,5 +1,5 @@
 -- tests/import.lua: offline tests for importing the official launcher token.
-package.path = package.path .. ";./src/?.lua"
+package.path = package.path .. ";./src/?.lua;./src/core/?.lua;./src/net/?.lua;./src/auth/?.lua;./src/accounts/?.lua;./src/host/?.lua;./src/vendor/?.lua"
 
 local util = require("util")
 local json = require("json")

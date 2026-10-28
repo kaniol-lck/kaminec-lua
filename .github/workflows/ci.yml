@@ -20,7 +20,8 @@ jobs:
         run: |
           $zip = Join-Path $env:RUNNER_TEMP 'lua54.zip'
           $dir = Join-Path $env:RUNNER_TEMP 'lua54'
-          Invoke-WebRequest -Uri 'https://downloads.sourceforge.net/project/luabinaries/5.4.8/Tools%20Executables/lua-5.4.8_Win64_bin.zip' -OutFile $zip -MaximumRetryCount 3 -RetryIntervalSec 2
+          curl.exe -L --retry 3 --retry-delay 2 -o $zip 'https://downloads.sourceforge.net/project/luabinaries/5.4.8/Tools%20Executables/lua-5.4.8_Win64_bin.zip'
+          if ($LASTEXITCODE -ne 0) { throw "curl failed with exit code $LASTEXITCODE" }
           Expand-Archive -Path $zip -DestinationPath $dir -Force
           $exe = Get-ChildItem $dir -Recurse -Filter 'lua54.exe' | Select-Object -First 1
           if (-not $exe) { throw 'lua54.exe not found in LuaBinaries zip' }

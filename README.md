@@ -86,10 +86,19 @@ Java 路径可用 `--java "C:\Path\To\java.exe"` 指定；不指定时使用 `PA
 ## 目录
 
 ```text
-src/        Lua 源码
-tests/      离线测试与 fixtures
-tools/      开发辅助脚本
-kaminec.bat Windows 入口
+src/
+  main.lua      CLI 入口
+  plugin.lua    可嵌入 API
+  util.lua      通用路径/文件/引号工具
+  core/         版本解析、规则、参数、库模型
+  net/          HTTP、下载、校验、资源、natives
+  auth/         Microsoft 登录、回调
+  accounts/     账号存储与官方启动器导入
+  host/         宿主边界与启动
+  vendor/       vendored Lua 库（dkjson）
+tests/          离线测试与 fixtures
+tools/          开发辅助脚本
+kaminec.bat     Windows 入口
 ```
 
 ## 许可

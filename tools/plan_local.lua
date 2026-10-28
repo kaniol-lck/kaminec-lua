@@ -1,7 +1,7 @@
 -- tools/plan_local.lua: build a launch plan from an already-installed
 -- loader version json + its vanilla parent, without downloading anything.
 -- usage: lua tools/plan_local.lua <child.json> <parent.json> [<loader-id>]
-package.path = package.path .. ";./src/?.lua"
+package.path = package.path .. ";./src/?.lua;./src/core/?.lua;./src/net/?.lua;./src/auth/?.lua;./src/accounts/?.lua;./src/host/?.lua;./src/vendor/?.lua"
 
 local json = require("json")
 local util = require("util")

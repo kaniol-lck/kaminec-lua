@@ -1,6 +1,6 @@
 -- tests/run.lua: offline tests for planner / rules / arguments
 -- run from the project root: lua tests/run.lua
-package.path = package.path .. ";./src/?.lua"
+package.path = package.path .. ";./src/?.lua;./src/core/?.lua;./src/net/?.lua;./src/auth/?.lua;./src/accounts/?.lua;./src/host/?.lua;./src/vendor/?.lua"
 
 local util = require("util")
 local planner = require("planner")

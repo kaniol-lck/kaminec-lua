@@ -1,5 +1,5 @@
 -- tests/launcher.lua: command redaction (access token must never be printed).
-package.path = package.path .. ";./src/?.lua"
+package.path = package.path .. ";./src/?.lua;./src/core/?.lua;./src/net/?.lua;./src/auth/?.lua;./src/accounts/?.lua;./src/host/?.lua;./src/vendor/?.lua"
 
 local launcher = require("launcher")
 

@@ -1,6 +1,6 @@
 -- tests/auth.lua: offline tests for the Microsoft login chain.
 -- No network: every httpc is a scripted fake.
-package.path = package.path .. ";./src/?.lua"
+package.path = package.path .. ";./src/?.lua;./src/core/?.lua;./src/net/?.lua;./src/auth/?.lua;./src/accounts/?.lua;./src/host/?.lua;./src/vendor/?.lua"
 
 local util = require("util")
 local json = require("json")

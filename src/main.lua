@@ -7,7 +7,20 @@
 -- env:
 --   KAMINEC_PROXY  http(s) proxy for curl (falls back to HTTPS_PROXY / HTTP_PROXY)
 
-package.path = package.path .. ";./src/?.lua"
+-- Resolve modules relative to this file, so the CLI works from any CWD.
+-- Files are grouped by role (core/net/auth/accounts/host/vendor) while the
+-- Lua module names stay short; all role directories are on package.path.
+do
+    local script = (arg and arg[0]) or "src/main.lua"
+    script = script:gsub("\\", "/")
+    local root = script:match("^(.*)/") or "src"
+    local paths = {}
+    for _, dir in ipairs({ root, root .. "/core", root .. "/net", root .. "/auth",
+                            root .. "/accounts", root .. "/host", root .. "/vendor" }) do
+        paths[#paths + 1] = dir .. "/?.lua"
+    end
+    package.path = table.concat(paths, ";") .. ";" .. package.path
+end
 
 local util = require("util")
 local json = require("json")

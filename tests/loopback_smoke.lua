@@ -1,6 +1,6 @@
 -- tests/loopback_smoke.lua: live smoke test for the local callback server.
 -- Starts the PowerShell listener, sends one fake callback with curl, checks it.
-package.path = package.path .. ";./src/?.lua"
+package.path = package.path .. ";./src/?.lua;./src/core/?.lua;./src/net/?.lua;./src/auth/?.lua;./src/accounts/?.lua;./src/host/?.lua;./src/vendor/?.lua"
 
 local loopback = require("loopback")
 local util = require("util")

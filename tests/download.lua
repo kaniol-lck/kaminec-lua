@@ -1,6 +1,6 @@
 -- tests/download.lua: offline tests for sha1 / download policy / apply stats
 -- run from the project root: lua tests/download.lua
-package.path = package.path .. ";./src/?.lua"
+package.path = package.path .. ";./src/?.lua;./src/core/?.lua;./src/net/?.lua;./src/auth/?.lua;./src/accounts/?.lua;./src/host/?.lua;./src/vendor/?.lua"
 
 local util = require("util")
 local sha1 = require("sha1")

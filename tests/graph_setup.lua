@@ -1,5 +1,5 @@
 -- tests/graph_setup.lua: offline tests for the Azure-app auto-creation helper.
-package.path = package.path .. ";./src/?.lua"
+package.path = package.path .. ";./src/?.lua;./src/core/?.lua;./src/net/?.lua;./src/auth/?.lua;./src/accounts/?.lua;./src/host/?.lua;./src/vendor/?.lua"
 
 local json = require("json")
 local graph = require("graph_setup")

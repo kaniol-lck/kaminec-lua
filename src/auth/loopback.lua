@@ -5,8 +5,15 @@ local util = require("util")
 
 local M = {}
 
+-- Locate loopback_server.ps1 next to this module, independent of CWD.
+local function module_dir()
+    local src = debug.getinfo(1, "S").source or ""
+    src = src:gsub("^@", ""):gsub("\\", "/")
+    return src:match("^(.*)/") or "."
+end
+
 function M.script()
-    return util.abs("src/loopback_server.ps1")
+    return module_dir() .. "/loopback_server.ps1"
 end
 
 -- Start a one-shot listener. It writes the request path to `outfile` and then

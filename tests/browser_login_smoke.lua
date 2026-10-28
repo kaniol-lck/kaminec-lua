@@ -1,7 +1,7 @@
 -- tests/browser_login_smoke.lua: real loopback server + fake Microsoft HTTP.
 -- Proves the launcher can receive the OAuth code by itself, with no manual
 -- copy/paste: the fake "browser" just GETs the callback URL once.
-package.path = package.path .. ";./src/?.lua"
+package.path = package.path .. ";./src/?.lua;./src/core/?.lua;./src/net/?.lua;./src/auth/?.lua;./src/accounts/?.lua;./src/host/?.lua;./src/vendor/?.lua"
 
 local json = require("json")
 local util = require("util")
