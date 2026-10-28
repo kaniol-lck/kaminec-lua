@@ -97,7 +97,7 @@ Linux：
 
 - **Windows 10/11**：完整支持（下载、启动、浏览器 loopback 登录）。
 - **Linux**：CLI 下载/启动、离线账号、官方启动器导入、设备码登录；CI 有 Ubuntu 测试。
-- **macOS**：代码已做平台抽象，但未实测，欢迎反馈。
+- **macOS**：CI 离线测试与 POSIX 启动脚本测试通过；没有真机启动验证。
 
 浏览器 loopback 登录目前仅 Windows（PowerShell 回调服务）；Linux 请用 `login --device-code`。
 
