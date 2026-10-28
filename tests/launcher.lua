@@ -21,6 +21,12 @@ check("token masked", redacted:find('"--accessToken" "***"', 1, true) ~= nil)
 check("other args kept", redacted:find('"--uuid" "abc"', 1, true) ~= nil)
 check("no token keeps command", launcher.redact('java -version') == 'java -version')
 
+-- POSIX builds use single-quoted args; the token must be masked there too.
+local posix_cmd = "java '--accessToken' 'eyJhbGciOiJSUzI1NiJ9.payload.signature' '--uuid' 'abc'"
+local posix_redacted = launcher.redact(posix_cmd)
+check("posix token removed", not posix_redacted:find("eyJhbGci", 1, true))
+check("posix token masked", posix_redacted:find("'--accessToken' '***'", 1, true) ~= nil)
+
 print("")
 print(string.format("%d failure(s)", failures))
 os.exit(failures > 0 and 1 or 0)

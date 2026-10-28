@@ -12,6 +12,8 @@
 - SHA1 校验、`.part` 断点续传、`--repair` / `--verify`
 - 离线账号、官方启动器 token 导入、Microsoft OAuth 浏览器登录
 - 可嵌入的插件 API（`api_version = 1`）
+- Linux 支持：平台抽象、`kaminec.sh`、`run.sh`、`login` 自动设备码
+- CI：Windows + Ubuntu，Lua 5.4
 - 回调页成功/失败两态与基础样式
 
 ### Fixed

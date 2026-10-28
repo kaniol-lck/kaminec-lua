@@ -276,7 +276,7 @@ local function cmd_login(opts)
                 .. "或写入 " .. util.join(workdir, "msa.json") .. "；"
                 .. "如果不想注册 Azure 应用，用 login --live（免注册设备码）")
         end
-        if opts["device-code"] then
+        if opts["device-code"] or not util.IS_WINDOWS then
             acct, err = auth.device_login(http, cid)
         else
             acct, err = auth.browser_login(http, cid, {
