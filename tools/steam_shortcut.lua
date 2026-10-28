@@ -47,8 +47,10 @@ while i <= #arg do
         opts.online = true; i = i + 1
     elseif a == "--json" then
         opts.json = true; i = i + 1
+    elseif a == "--hidden" then
+        opts.hidden = true; i = i + 1
     elseif a == "--help" or a == "-h" then
-        print("usage: lua tools/steam_shortcut.lua --version <id> --dir <instance> [--java <java>] [--username <name>] [--target <lua>] [--online] [--json]")
+        print("usage: lua tools/steam_shortcut.lua --version <id> --dir <instance> [--java <java>] [--username <name>] [--target <lua>] [--online] [--hidden] [--json]")
         os.exit(0)
     else
         io.stderr:write("unknown argument: " .. tostring(a) .. "\n")
@@ -108,14 +110,41 @@ args[#args + 1] = "--name"; args[#args + 1] = q(opts.username)
 if opts.java then args[#args + 1] = "--java"; args[#args + 1] = q(java_display) end
 local launch_options = table.concat(args, " ")
 
+-- Optional Windows wrapper: Steam -> wscript.exe -> hidden cmd -> lua -> java.
+-- wscript is a GUI-subsystem process, and `Run ..., 0, True` hides the cmd
+-- window, so no Lua/Java console is visible. The cmd file contains no token.
+local target_display, launch_options_display = target_display, launch_options
+local hidden_files
+if opts.hidden then
+    if not util.IS_WINDOWS then
+        io.stderr:write("--hidden is Windows-only (wscript wrapper)\n")
+        os.exit(2)
+    end
+    local safe_version = opts.version:gsub("[^%w%._-]", "_")
+    local cmd_path = util.join(instance, "steam-launch-" .. safe_version .. ".cmd")
+    local vbs_path = util.join(instance, "steam-launch-" .. safe_version .. ".vbs")
+    local lua_target = target_display
+    util.write(cmd_path, "@echo off\r\ncd /d " .. q(instance_display) .. "\r\n"
+        .. q(lua_target) .. " " .. launch_options .. "\r\n")
+    local windir = os.getenv("SystemRoot") or "C:\\Windows"
+    local wscript = native_path(windir .. "\\System32\\wscript.exe")
+    local vbs = 'Set sh = CreateObject("WScript.Shell")\r\n'
+        .. 'sh.Run "cmd /c " & Chr(34) & "' .. native_path(cmd_path):gsub('"', '""') .. '" & Chr(34), 0, True\r\n'
+    util.write(vbs_path, vbs)
+    hidden_files = { cmd = native_path(cmd_path), vbs = native_path(vbs_path) }
+    target_display = wscript
+    launch_options_display = q(native_path(vbs_path))
+end
+
 local result = {
     name = shortcut_name,
     target = target_display,
     startdir = instance_display,
-    launch_options = launch_options,
+    launch_options = launch_options_display,
     version = opts.version,
     instance = instance_display,
     username = opts.username,
+    hidden = hidden_files ~= nil,
 }
 
 if opts.json then
@@ -128,10 +157,19 @@ print("")
 print("名称:       " .. shortcut_name)
 print("目标:       " .. target_display)
 print("起始位置:   " .. instance_display)
-print("启动参数:   " .. launch_options)
+print("启动参数:   " .. launch_options_display)
+if hidden_files then
+    print("隐藏窗口:   已生成 " .. hidden_files.cmd)
+    print("            和 " .. hidden_files.vbs)
+end
 print("")
-print("Steam: 库 -> 添加非 Steam 游戏 -> 浏览 -> 选择上面的 Lua 可执行文件,")
-print("       再把「起始位置」和「启动参数」填进去。")
+if hidden_files then
+    print("Steam: 库 -> 添加非 Steam 游戏 -> 浏览 -> 选择上面的 wscript.exe,")
+    print("       再把「起始位置」和「启动参数」填进去（启动时不会出现终端窗口）。")
+else
+    print("Steam: 库 -> 添加非 Steam 游戏 -> 浏览 -> 选择上面的 Lua 可执行文件,")
+    print("       再把「起始位置」和「启动参数」填进去。")
+end
 print("")
 if not util.exists(target) then
     print("警告: 目标不存在: " .. target)

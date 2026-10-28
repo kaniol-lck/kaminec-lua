@@ -106,18 +106,23 @@ Linux：
 Steam 支持不在核心 CLI 里，由独立脚本生成「添加非 Steam 游戏」所需字段：
 
 ```bat
+:: 普通参数（会显示 Lua 控制台）
 lua tools\steam_shortcut.lua --version 1.21.8 --dir .minecraft --java "C:\Java\bin\java.exe"
+
+:: 隐藏窗口（生成 wscript + 隐藏 cmd wrapper，不显示 Lua/Java 终端）
+lua tools\steam_shortcut.lua --version 1.21.8 --dir .minecraft --java "C:\Java\bin\java.exe" --hidden
 ```
 
 输出：
 
 - 名称
-- 目标（Lua 可执行文件）
+- 目标（默认 Lua；`--hidden` 时是 `wscript.exe`）
 - 起始位置（实例目录）
-- 启动参数（`src/main.lua launch ...`）
+- 启动参数（`src/main.lua launch ...` 或生成的 `.vbs`）
 
-Steam → 库 → 添加非 Steam 游戏 → 浏览选择 Lua 可执行文件，再填入起始位置和启动参数。
-`--json` 可用于外部工具；自动写入 `shortcuts.vdf` 暂未实现。
+Steam → 库 → 添加非 Steam 游戏 → 浏览选择上面的目标，再填入起始位置和启动参数。
+`--hidden` 会在实例目录生成 `steam-launch-<版本>.cmd/.vbs`；`--json` 可用于外部工具。
+自动写入 `shortcuts.vdf` 暂未实现。
 
 ## 目录
 
