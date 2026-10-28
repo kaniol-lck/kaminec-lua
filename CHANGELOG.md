@@ -13,6 +13,7 @@
 - 离线账号、官方启动器 token 导入、Microsoft OAuth 浏览器登录
 - 可嵌入的插件 API（`api_version = 1`）
 - Linux 支持：平台抽象、`kaminec.sh`、`run.sh`、`login` 自动设备码
+- Linux 真实启动验证（WSLg + OpenAL，1.21.8 到主菜单）
 - POSIX 启动链路测试（fake java 验证 `run.sh`）
 - CI：Windows + Ubuntu + macOS，Lua 5.4
 - 回调页成功/失败两态与基础样式

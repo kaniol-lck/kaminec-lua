@@ -6,9 +6,9 @@
 
 ## 状态
 
-- 当前版本：**0.1.0**（Windows / Linux；macOS 未验证）
+- 当前版本：**0.1.0**（Windows / Linux；macOS 仅 CI 验证）
 - 已实测启动到主菜单：
-  - Minecraft 1.21.8（离线账号）
+  - Minecraft 1.21.8（Windows 离线；Linux WSLg + OpenAL）
   - Forge 1.20.1 / NeoForge 21.1.209 / Fabric 0.20.1
   - Forge 1.12.2（Java 8）
 - 自动下载、SHA1 校验、断点续传、natives 解压、旧版本格式回退
@@ -96,10 +96,10 @@ Linux：
 ## 平台
 
 - **Windows 10/11**：完整支持（下载、启动、浏览器 loopback 登录）。
-- **Linux**：CLI 下载/启动、离线账号、官方启动器导入、设备码登录；CI 有 Ubuntu 测试。
+- **Linux**：已在 WSLg 下真实启动 1.21.8（OpenAL / Sound engine 正常）；CLI 下载、离线账号、官方启动器导入、设备码登录可用；CI 有 Ubuntu 测试。
 - **macOS**：CI 离线测试与 POSIX 启动脚本测试通过；没有真机启动验证。
 
-浏览器 loopback 登录目前仅 Windows（PowerShell 回调服务）；Linux 请用 `login --device-code`。
+浏览器 loopback 登录目前仅 Windows（PowerShell 回调服务）；Linux 的 `login` 会自动使用设备码。
 
 ## 目录
 
