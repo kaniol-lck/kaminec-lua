@@ -130,7 +130,7 @@ check("1.12.2 vanilla: jvm has java.library.path", has_substring(vanilla112.jvm_
 check("1.12.2 vanilla: -cp followed by full classpath", (function()
     for i, a in ipairs(vanilla112.jvm_args) do
         if a == "-cp" then
-            return vanilla112.jvm_args[i + 1] == table.concat(vanilla112.classpath, ";")
+            return vanilla112.jvm_args[i + 1] == table.concat(vanilla112.classpath, vanilla112.classpath_separator)
         end
     end
     return false
