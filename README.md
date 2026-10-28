@@ -112,6 +112,7 @@ kaminec.bat profile defaults --dir .minecraft --java "C:\Java\bin\java.exe" --me
 :: 管理 profile
 kaminec.bat profile list --dir .minecraft
 kaminec.bat profile create 1.21.8 --dir .minecraft --name "Vanilla 1.21.8" --memory 4G
+kaminec.bat profile create --from-existing D:\instances\forge-1.20.1 --dir .minecraft --name "Existing Forge"
 kaminec.bat profile show vanilla-1-21-8 --dir .minecraft
 kaminec.bat profile edit vanilla-1-21-8 --dir .minecraft --java "C:\Java\jdk-21\bin\java.exe"
 kaminec.bat profile delete vanilla-1-21-8 --dir .minecraft --yes

@@ -394,13 +394,36 @@ local function cmd_profile(opts, rest)
     end
 
     if sub == "create" then
+        local function settings_from_opts()
+            local s = {}
+            if opts.java then s.java = opts.java end
+            if opts.memory then s.memory = opts.memory end
+            if opts.account then s.account = opts.account end
+            if opts.username then s.username = opts.username end
+            return s
+        end
+        if opts["from-existing"] then
+            local info, derr = profile.detect_existing(opts["from-existing"], rest[2] or opts.version)
+            if not info then error(derr) end
+            local id, p = profile.create(store, {
+                root = info.root,
+                version = info.version,
+                name = opts.name or ("Existing " .. info.version),
+                id = opts.id,
+                game_dir = opts["game-dir"] or info.game_dir,
+                natives_dir = opts["natives-dir"] or info.natives_dir,
+                external = true,
+                settings = settings_from_opts(),
+                source = { launcher = "existing", path = opts["from-existing"] },
+            })
+            profile.save(root, store)
+            print("attached existing profile " .. id .. " (" .. p.version .. ")")
+            print("  root:     " .. p.root)
+            print("  game_dir: " .. p.game_dir)
+            return
+        end
         local version = rest[2] or opts.version
-        if not version then error("usage: profile create <version> [--name name]") end
-        local settings = {}
-        if opts.java then settings.java = opts.java end
-        if opts.memory then settings.memory = opts.memory end
-        if opts.account then settings.account = opts.account end
-        if opts.username then settings.username = opts.username end
+        if not version then error("usage: profile create <version> [--name name] | profile create --from-existing <dir> [--version id]") end
         local id, p = profile.create(store, {
             root = root,
             version = version,
@@ -409,7 +432,7 @@ local function cmd_profile(opts, rest)
             game_dir = opts["game-dir"],
             natives_dir = opts["natives-dir"],
             external = opts.external or false,
-            settings = settings,
+            settings = settings_from_opts(),
         })
         profile.save(root, store)
         print("created profile " .. id .. " (" .. p.version .. ")")

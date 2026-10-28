@@ -30,6 +30,21 @@ function M.exists(path)
     return false
 end
 
+-- Directories do not open with io.open on Windows; use the shell.
+function M.isdir(path)
+    path = tostring(path)
+    local cmd
+    if IS_WINDOWS then
+        cmd = 'if exist "' .. path:gsub("/", "\\") .. '\\*" (echo 1) else (echo 0)'
+    else
+        cmd = "test -d " .. M.quote(path) .. " && echo 1 || echo 0"
+    end
+    local f = io.popen(cmd)
+    local s = f and f:read("l") or "0"
+    if f then f:close() end
+    return s:gsub("%s+$", "") == "1"
+end
+
 function M.size(path)
     local f = io.open(path, "rb")
     if not f then return -1 end

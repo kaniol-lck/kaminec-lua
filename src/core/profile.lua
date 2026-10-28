@@ -124,4 +124,72 @@ function M.import_official(store, source_root, opts)
     return { added = added, skipped = skipped, missing = missing, root = root }
 end
 
+local function list_dirs(path)
+    local cmd
+    if util.IS_WINDOWS then
+        cmd = 'dir /b /ad "' .. path:gsub("/", "\\") .. '" 2>nul'
+    else
+        cmd = 'ls -1 "' .. path .. '" 2>/dev/null'
+    end
+    local f = io.popen(cmd)
+    local out = {}
+    if f then
+        for line in f:lines() do
+            line = line:gsub("%s+$", "")
+            if line ~= "" then out[#out + 1] = line end
+        end
+        f:close()
+    end
+    return out
+end
+
+-- Discover an already-installed instance/version without copying it.
+-- Accepts: a launcher root (contains versions/), a versions/<id> dir, or a
+-- directory containing .minecraft/versions.
+function M.detect_existing(src, version)
+    src = util.abs(src)
+    local root
+    local base = util.basename(src)
+    local parent = util.dirname(src)
+    if util.basename(parent) == "versions" and util.exists(util.join(src, base .. ".json")) then
+        root = util.dirname(parent)
+        version = version or base
+    elseif util.isdir(util.join(src, "versions")) then
+        root = src
+    elseif util.isdir(util.join(src, ".minecraft", "versions")) then
+        root = util.join(src, ".minecraft")
+    else
+        return nil, "找不到 versions 目录: " .. src
+    end
+
+    local versions_dir = util.join(root, "versions")
+    if version then
+        if not util.exists(util.join(versions_dir, version, version .. ".json")) then
+            return nil, "版本不存在: " .. version
+        end
+    else
+        local candidates = {}
+        for _, name in ipairs(list_dirs(versions_dir)) do
+            if util.exists(util.join(versions_dir, name, name .. ".json")) then
+                candidates[#candidates + 1] = name
+            end
+        end
+        if #candidates == 0 then return nil, "versions 下没有可用的 version json" end
+        if #candidates > 1 then
+            table.sort(candidates)
+            return nil, "多个版本，请用 --version 指定: " .. table.concat(candidates, ", ")
+        end
+        version = candidates[1]
+    end
+
+    local game_dir = util.join(root, "game")
+    if not util.isdir(game_dir) then game_dir = root end
+    return {
+        root = root,
+        version = version,
+        game_dir = game_dir,
+        natives_dir = util.join(root, "natives"),
+    }
+end
+
 return M
