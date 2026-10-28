@@ -237,8 +237,8 @@ function M.build(host, workdir, version_id, opts)
         end
     end
 
-    local natives_dir = util.join(workdir, "natives")
-    local game_dir = util.join(workdir, "game")
+    local natives_dir = opts.natives_dir or util.join(workdir, "natives")
+    local game_dir = opts.game_dir or util.join(workdir, "game")
 
     local main_class = pick(docs, function(d) return d.mainClass end)
     if not main_class then error("version json has no mainClass") end
@@ -304,6 +304,12 @@ function M.build(host, workdir, version_id, opts)
             jvm[#jvm + 1] = "-Dminecraft.launcher.version=" .. launcher_version
         end
         defaults_added = true
+    end
+
+    if opts.memory and tostring(opts.memory) ~= "" then
+        local m = tostring(opts.memory)
+        if m:match("^%d+$") then m = m .. "M" end
+        table.insert(jvm, 1, "-Xmx" .. m)
     end
 
     local legacy = used_minecraft_arguments or not has_classpath

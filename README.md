@@ -101,6 +101,34 @@ Linux：
 
 浏览器 loopback 登录目前仅 Windows（PowerShell 回调服务）；Linux 的 `login` 会自动使用设备码。
 
+## Profile 与全局设置
+
+launcher 根目录的 `profiles.json` 保存全局 `defaults` 和每个 profile：
+
+```bat
+:: 全局缺省值（未在 profile 中覆盖时生效）
+kaminec.bat profile defaults --dir .minecraft --java "C:\Java\bin\java.exe" --memory 2G --username Steve
+
+:: 管理 profile
+kaminec.bat profile list --dir .minecraft
+kaminec.bat profile create 1.21.8 --dir .minecraft --name "Vanilla 1.21.8" --memory 4G
+kaminec.bat profile show vanilla-1-21-8 --dir .minecraft
+kaminec.bat profile edit vanilla-1-21-8 --dir .minecraft --java "C:\Java\jdk-21\bin\java.exe"
+kaminec.bat profile delete vanilla-1-21-8 --dir .minecraft --yes
+
+:: 用 profile 下载/启动
+kaminec.bat download --profile vanilla-1-21-8 --dir .minecraft
+kaminec.bat launch --profile vanilla-1-21-8 --dir .minecraft
+
+:: 从官方启动器 / CurseForge 导入（只读挂接）
+kaminec.bat profile import --from official --dir .minecraft --dry-run
+kaminec.bat profile import --from official --dir .minecraft --yes
+```
+
+合并顺序：内置默认值 → `defaults` → profile `settings` → CLI 参数。
+导入的 profile 标记 `external=true`，只读引用外部实例，删除 profile 不会删除源目录。
+第三方启动器（Prism/HMCL/ATLauncher）导入以后放到 `tools/`，不在核心 CLI 内。
+
 ## Steam（可选，独立脚本）
 
 Steam 支持不在核心 CLI 里，由独立脚本生成「添加非 Steam 游戏」所需字段：

@@ -31,6 +31,7 @@ local assets = require("assets")
 local account = require("account")
 local download = require("download")
 local natives = require("natives")
+local profile = require("profile")
 local http = require("http")
 local accounts = require("accounts")
 local auth = require("login")
@@ -62,6 +63,27 @@ end
 
 local function workdir_of(opts)
     return util.abs(opts.dir or ".minecraft")
+end
+
+-- Apply a profile's root/paths/settings to the CLI options. Explicit CLI
+-- flags win over profile settings, which win over profiles.json defaults.
+local function resolve_profile(opts)
+    if not opts.profile or opts.profile == true then return end
+    local store = profile.load(workdir_of(opts))
+    local p = profile.find(store, opts.profile)
+    if not p then
+        error("profile 不存在: " .. tostring(opts.profile) .. "（用 profile list 查看）")
+    end
+    local eff = profile.merge(store.defaults, p.settings)
+    if p.root and p.root ~= "" then opts.dir = p.root end
+    opts.game_dir = p.game_dir
+    opts.natives_dir = p.natives_dir
+    opts.version = p.version
+    opts.memory = opts.memory or eff.memory
+    opts.java = opts.java or eff.java
+    opts.account = opts.account or eff.account
+    opts.name = opts.name or eff.username
+    opts._profile = p
 end
 
 -- Azure application (public client) id for the device-code flow.
@@ -137,7 +159,7 @@ end
 
 local function build_plan(host, opts, rest, with_downloads)
     local workdir = workdir_of(opts)
-    local id = rest[1] or "latest"
+    local id = rest[1] or opts.version or "latest"
     local acct
     if opts.account then
         acct = load_account(opts, workdir)
@@ -352,12 +374,141 @@ local function cmd_accounts(opts)
     end
 end
 
+local function cmd_profile(opts, rest)
+    local sub = rest[1]
+    local root = workdir_of(opts)
+    local store = profile.load(root)
+
+    if sub == "list" or sub == nil then
+        print("profiles in " .. profile.path(root))
+        local ids = {}
+        for id in pairs(store.profiles) do ids[#ids + 1] = id end
+        table.sort(ids)
+        if #ids == 0 then print("  (none)") end
+        for _, id in ipairs(ids) do
+            local p = store.profiles[id]
+            print(string.format("  %-24s %-32s %s", id, tostring(p.version),
+                p.external and "external" or "managed"))
+        end
+        return
+    end
+
+    if sub == "create" then
+        local version = rest[2] or opts.version
+        if not version then error("usage: profile create <version> [--name name]") end
+        local settings = {}
+        if opts.java then settings.java = opts.java end
+        if opts.memory then settings.memory = opts.memory end
+        if opts.account then settings.account = opts.account end
+        if opts.username then settings.username = opts.username end
+        local id, p = profile.create(store, {
+            root = root,
+            version = version,
+            name = opts.name,
+            id = opts.id,
+            game_dir = opts["game-dir"],
+            natives_dir = opts["natives-dir"],
+            external = opts.external or false,
+            settings = settings,
+        })
+        profile.save(root, store)
+        print("created profile " .. id .. " (" .. p.version .. ")")
+        print("  game_dir: " .. p.game_dir)
+        return
+    end
+
+    if sub == "import" then
+        local from = opts.from or "official"
+        if from ~= "official" and from ~= "curseforge" then
+            error("目前只支持 --from official|curseforge；第三方启动器导入以后放到 tools/")
+        end
+        local result, err = profile.import_official(store, opts["source-dir"], { launcher = from })
+        if not result then error(err) end
+        print("source: " .. result.root)
+        for _, v in ipairs(result.added) do print("  add    " .. v) end
+        for _, v in ipairs(result.skipped) do print("  skip   " .. v .. "（已存在）") end
+        for _, v in ipairs(result.missing) do print("  bad    " .. v) end
+        if opts["dry-run"] or not opts.yes then
+            print("未写入；确认后加 --yes")
+            return
+        end
+        profile.save(root, store)
+        print("saved " .. profile.path(root))
+        return
+    end
+
+    if sub == "defaults" then
+        local changed = false
+        for _, k in ipairs({ "java", "memory", "account", "username" }) do
+            if opts[k] then store.defaults[k] = opts[k]; changed = true end
+        end
+        if changed then
+            profile.save(root, store)
+            print("updated defaults in " .. profile.path(root))
+        end
+        local d = store.defaults
+        print("defaults:")
+        for _, k in ipairs({ "java", "memory", "account", "username" }) do
+            print(string.format("  %-10s %s", k .. ":", tostring(d[k] or "")))
+        end
+        return
+    end
+
+    local id = rest[2]
+    local p = profile.find(store, id)
+    if not p then error("profile 不存在: " .. tostring(id)) end
+
+    if sub == "show" then
+        print("id:          " .. tostring(id))
+        for _, k in ipairs({ "name", "version", "root", "game_dir", "natives_dir", "external" }) do
+            print(string.format("%-12s %s", k .. ":", tostring(p[k])))
+        end
+        local eff = profile.merge(store.defaults, p.settings)
+        print("effective settings:")
+        for _, k in ipairs({ "java", "memory", "account", "username" }) do
+            if eff[k] then print("  " .. k .. " = " .. tostring(eff[k])) end
+        end
+        return
+    end
+
+    if sub == "edit" then
+        if opts.name then p.name = opts.name end
+        if opts.version then p.version = opts.version end
+        if opts["game-dir"] then p.game_dir = util.abs(opts["game-dir"]) end
+        if opts["natives-dir"] then p.natives_dir = util.abs(opts["natives-dir"]) end
+        p.settings = p.settings or {}
+        for _, k in ipairs({ "java", "memory", "account", "username" }) do
+            if opts[k] then p.settings[k] = opts[k] end
+        end
+        profile.save(root, store)
+        print("updated profile " .. tostring(id))
+        return
+    end
+
+    if sub == "delete" then
+        if not opts.yes then
+            print("will delete profile: " .. tostring(id) .. "（加 --yes 确认）")
+            return
+        end
+        if not p.external and p.game_dir and p.game_dir ~= root then
+            util.rmtree(p.game_dir)
+        end
+        store.profiles[id] = nil
+        profile.save(root, store)
+        print("deleted profile " .. tostring(id))
+        return
+    end
+
+    error("usage: profile <list|create|show|edit|delete|import|defaults> ...")
+end
+
 local cmds = {
     versions = cmd_versions,
     login = cmd_login,
     ["setup-app"] = cmd_setup_app,
     import = cmd_import,
     accounts = cmd_accounts,
+    profile = cmd_profile,
     plan = cmd_plan,
     download = cmd_download,
     launch = cmd_launch,
@@ -369,7 +520,7 @@ local function main(argv)
     local fn = name and cmds[name]
     if not fn then
         print("Kaminec-Lua -- minimal Lua Minecraft launcher")
-        print("usage: lua src/main.lua <versions|login|setup-app|import|accounts|plan|download|launch> [args]")
+        print("usage: lua src/main.lua <versions|login|setup-app|import|accounts|profile|plan|download|launch> [args]")
         print("")
         print("examples:")
         print("  lua src/main.lua import --dir .minecraft --yes")
@@ -384,6 +535,7 @@ local function main(argv)
         os.exit(1)
     end
     table.remove(rest, 1)
+    if name ~= "profile" then resolve_profile(opts) end
     local ok, err = pcall(fn, opts, rest)
     if not ok then
         print("error: " .. tostring(err):gsub("^[^:]+:%d+: ", ""))

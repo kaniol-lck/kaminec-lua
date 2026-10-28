@@ -59,6 +59,7 @@ jobs:
           "%LUA_EXE%" tests\launcher.lua || exit /b 1
           "%LUA_EXE%" tests\launcher_run.lua || exit /b 1
           "%LUA_EXE%" tests\import.lua || exit /b 1
+          "%LUA_EXE%" tests\profile.lua || exit /b 1
           "%LUA_EXE%" tests\graph_setup.lua || exit /b 1
 
       - name: Offline tests (Linux)
@@ -73,6 +74,7 @@ jobs:
           lua5.4 tests/launcher.lua
           lua5.4 tests/launcher_run.lua
           lua5.4 tests/import.lua
+          lua5.4 tests/profile.lua
           lua5.4 tests/graph_setup.lua
 
       - name: Offline tests (macOS)
@@ -87,4 +89,6 @@ jobs:
           lua tests/launcher.lua
           lua tests/launcher_run.lua
           lua tests/import.lua
+          lua tests/profile.lua
           lua tests/graph_setup.lua
+
