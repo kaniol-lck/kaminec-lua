@@ -16,7 +16,8 @@
 
 ## 功能
 
-- `versions` / `plan` / `download` / `launch` 四段式 CLI
+- `versions` / `plan` / `download` / `launch` 四段式启动流程
+- `profile`（全局 defaults、官方/CurseForge 导入、`--profile`）与 `java`（发现/校验）管理
 - 现代 version json（`arguments`、rules、classifier、Maven `url`）
 - 旧版本（≤1.12.2）的 `minecraftArguments`、默认 JVM 参数、legacy natives
 - 本地已安装实例优先，支持 Forge/NeoForge/Fabric 的继承版本
@@ -28,7 +29,7 @@
 - Windows 10/11 或 Linux
 - [Lua 5.4](https://www.lua.org/download.html)（`lua.exe` / `lua5.4` 在 `PATH`，或设置 `LUA` 环境变量）
 - `curl`
-- Java：1.21.x 需要 Java 21+；1.12.2 需要 Java 8（用 `--java` 指定）
+- Java：1.21.x 需要 Java 21+；1.12.2 需要 Java 8；启动器按版本自动发现/匹配，也可用 `--java` 指定
 - Windows PowerShell（仅 Windows 浏览器回调登录使用；Linux 用 `login --device-code`）
 - Linux 解压 legacy natives 需要 `unzip`（或 `python3`）
 
@@ -51,7 +52,15 @@ kaminec.bat launch 1.21.8 --dir .minecraft --name Steve
 kaminec.bat launch 1.20.1-forge-47.3.0 --dir <实例目录> --offline --name Steve
 ```
 
-Java 路径可用 `--java "C:\Path\To\java.exe"` 指定；不指定时使用 `PATH` 里的 `java`。
+Java 路径可用 `--java "C:\Path\To\java.exe"` 指定；不指定时按 version json 的 `javaVersion.majorVersion` 自动发现/匹配，`java list` 可查看已发现的 Java。
+
+帮助：
+
+```bat
+kaminec.bat -h
+kaminec.bat help launch
+kaminec.bat profile -h
+```
 
 Linux：
 
@@ -110,7 +119,7 @@ Linux：
 kaminec.bat java list
 
 :: 按 profile 自动选择；也可显式指定
-kaminec.bat profile create 1.21.8 --dir .minecraft --java-auto
+kaminec.bat profile create 1.21.8 --dir .minecraft --id vanilla-1-21-8 --java-auto
 kaminec.bat launch --profile vanilla-1-21-8 --dir .minecraft
 kaminec.bat launch 1.12.2 --dir .minecraft --java "C:\Java\jre8\bin\java.exe"
 ```
@@ -130,8 +139,8 @@ kaminec.bat profile defaults --dir .minecraft --java "C:\Java\bin\java.exe" --me
 
 :: 管理 profile
 kaminec.bat profile list --dir .minecraft
-kaminec.bat profile create 1.21.8 --dir .minecraft --name "Vanilla 1.21.8" --memory 4G
-kaminec.bat profile create --from-existing D:\instances\forge-1.20.1 --dir .minecraft --name "Existing Forge"
+kaminec.bat profile create 1.21.8 --dir .minecraft --name "Vanilla 1.21.8" --id vanilla-1-21-8 --memory 4G
+kaminec.bat profile create --from-existing D:\instances\forge-1.20.1 --dir .minecraft --id existing-forge --name "Existing Forge"
 kaminec.bat profile show vanilla-1-21-8 --dir .minecraft
 kaminec.bat profile edit vanilla-1-21-8 --dir .minecraft --java "C:\Java\jdk-21\bin\java.exe"
 kaminec.bat profile delete vanilla-1-21-8 --dir .minecraft --yes
@@ -216,7 +225,7 @@ lua tools\steam_shortcut.lua --profile steamprof --dir .minecraft --hidden --app
 - 启动参数（`src/main.lua launch ...` 或生成的 `.vbs`）
 
 Steam → 库 → 添加非 Steam 游戏 → 浏览选择上面的目标，再填入起始位置和启动参数。
-`--hidden` 会在实例目录生成 `steam-launch-<版本>.cmd/.vbs`；`--json` 可用于外部工具。
+`--hidden` 会在实例目录生成 `steam-launch-<版本或 profile id>.cmd/.vbs`；`--json` 可用于外部工具。
 
 ## 目录
 
@@ -225,7 +234,7 @@ src/
   main.lua      CLI 入口
   plugin.lua    可嵌入 API
   util.lua      通用路径/文件/引号工具
-  core/         版本解析、规则、参数、库模型
+  core/         版本解析、规则、参数、库模型、Java 发现
   net/          HTTP、下载、校验、资源、natives
   auth/         Microsoft 登录、回调
   accounts/     账号存储与官方启动器导入

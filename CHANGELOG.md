@@ -16,6 +16,7 @@
 - 可嵌入的插件 API（`api_version = 1`）
 - Profile 层：全局 defaults、profile CRUD、`--profile` 下载/启动
 - Java 发现与版本校验：`java list`、profile `java_auto`、启动前 major 检查
+- CLI 帮助：`-h` / `--help` / `help <command>`
 - `profile create --from-existing`：只读挂接已有实例/版本目录
 - 从官方启动器 / CurseForge 导入 profile（external 只读挂接）
 - Linux 支持：平台抽象、`kaminec.sh`、`run.sh`、`login` 自动设备码

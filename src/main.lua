@@ -667,24 +667,141 @@ local cmds = {
     launch = cmd_launch,
 }
 
+local function print_global_help()
+    print("Kaminec-Lua -- minimal Lua Minecraft launcher")
+    print("")
+    print("usage: lua src/main.lua <command> [options]")
+    print("       kaminec.bat <command> [options]")
+    print("")
+    print("commands:")
+    print("  versions    list available versions")
+    print("  login       Microsoft login (browser/device code)")
+    print("  setup-app   configure Azure client id")
+    print("  import      import official launcher token")
+    print("  accounts    list/manage stored accounts")
+    print("  profile     create/list/show/edit/delete/import profiles")
+    print("  java        list/detect installed Java")
+    print("  plan        print launch plan JSON")
+    print("  download    download files / export task list")
+    print("  launch      build plan and launch the game")
+    print("  help        show help: help <command>")
+    print("")
+    print("examples:")
+    print("  kaminec.bat versions")
+    print("  kaminec.bat profile list --dir .minecraft")
+    print("  kaminec.bat java list")
+    print("  kaminec.bat download 1.21.8 --dir .minecraft")
+    print("  kaminec.bat launch 1.21.8 --dir .minecraft --name Steve")
+    print("  kaminec.bat launch --profile vanilla-1.21.8 --dir .minecraft")
+    print("")
+    print("use -h or --help for this list; use 'help <command>' for details.")
+end
+
+local help_text = {
+    versions = {
+        "usage: versions [--dir <launcher-root>]",
+        "Prints the latest release/snapshot and the newest releases.",
+    },
+    login = {
+        "usage: login --dir <launcher-root> [--client-id <azure-id>]",
+        "Windows uses browser + loopback; Linux uses device code.",
+    },
+    ["setup-app"] = {
+        "usage: setup-app --dir <launcher-root> [--client-id <azure-id>]",
+        "Stores the Azure application id in <launcher-root>/msa.json.",
+    },
+    import = {
+        "usage: import --dir <launcher-root> [--yes]",
+        "Imports the official launcher's short-lived token (about 24h).",
+    },
+    accounts = {
+        "usage: accounts [list] --dir <launcher-root>",
+        "Lists stored accounts (tokens stay local).",
+    },
+    profile = {
+        "usage: profile <list|create|show|edit|delete|import|defaults> --dir <root>",
+        "",
+        "  profile defaults --memory 2G --java <path> --username Steve",
+        "  profile create <version> --name <name> [--memory 4G] [--java-auto]",
+        "  profile create --from-existing <instance-or-version-dir> [--version <id>]",
+        "  profile import --from official|curseforge [--dry-run] [--yes]",
+        "  profile list",
+        "  profile show <id>",
+        "  profile edit <id> [--java <path>] [--memory 4G] [--java-auto]",
+        "  profile delete <id> --yes",
+        "",
+        "download/launch accept --profile <id>.",
+    },
+    java = {
+        "usage: java <list|detect <path>>",
+        "",
+        "  java list       discover JAVA_HOME, PATH and common JDK dirs",
+        "  java detect <path>  inspect one java(.exe) or JDK home",
+        "",
+        "launch selects a Java matching the version's required major; override with --java.",
+    },
+    plan = {
+        "usage: plan [<version>] --dir <launcher-root> [--profile <id>]",
+        "       [--out <file>] [--offline] [--java <path>]",
+        "Prints the resolved plan as JSON; no files are downloaded.",
+    },
+    download = {
+        "usage: download [<version>] --dir <launcher-root> [--profile <id>]",
+        "       [--repair|--verify] [--offline]",
+        "       [--export-aria2 <file>|--export-json <file>]",
+        "Downloads missing files, or exports a task list when --export-* is used.",
+    },
+    launch = {
+        "usage: launch [<version>] --dir <launcher-root> [--profile <id>]",
+        "       [--name <offline-name>|--account <stored-account>]",
+        "       [--java <path>] [--memory 4G] [--dry-run] [--offline]",
+        "       [--ignore-java-check]",
+        "Builds the plan, downloads missing files, then starts the game.",
+    },
+}
+
+local function print_help(name)
+    if not name then print_global_help(); return end
+    local lines = help_text[name]
+    if not lines then
+        print_global_help()
+        print("")
+        print("unknown command: " .. tostring(name))
+        return
+    end
+    for _, line in ipairs(lines) do print(line) end
+end
+
 local function main(argv)
+    local function has_help()
+        for _, a in ipairs(argv) do
+            if a == "-h" or a == "--help" then return true end
+        end
+        return false
+    end
+    local function first_command()
+        for _, a in ipairs(argv) do
+            if a:sub(1, 1) ~= "-" then return a end
+        end
+    end
+    if argv[1] == "help" then
+        print_help(argv[2])
+        return
+    end
+    if has_help() then
+        print_help(first_command())
+        return
+    end
+    if #argv == 0 then
+        print_help()
+        return
+    end
+
     local opts, rest = parse(argv)
     local name = rest[1]
     local fn = name and cmds[name]
     if not fn then
-        print("Kaminec-Lua -- minimal Lua Minecraft launcher")
-        print("usage: lua src/main.lua <versions|login|setup-app|import|accounts|profile|java|plan|download|launch> [args]")
-        print("")
-        print("examples:")
-        print("  lua src/main.lua import --dir .minecraft --yes")
-        print("  lua src/main.lua setup-app --dir .minecraft")
-        print("  lua src/main.lua login --dir .minecraft")
-        print("  lua src/main.lua login --dir .minecraft --client-id <azure-app-id>")
-        print("  lua src/main.lua versions")
-        print("  lua src/main.lua plan 1.20.1-forge-47.3.0 --dir .minecraft")
-        print("  lua src/main.lua download 1.21.8 --dir .minecraft --repair")
-        print("  lua src/main.lua launch 1.21.8 --dir .minecraft --account Steve")
-        print("  lua src/main.lua launch 1.21.8 --dir .minecraft --name Steve")
+        print_help(name)
         os.exit(1)
     end
     table.remove(rest, 1)
