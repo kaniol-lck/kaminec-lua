@@ -263,7 +263,7 @@ function M.build(host, workdir, version_id, opts)
         natives_directory = natives_dir,
         launcher_name = launcher_name,
         launcher_version = launcher_version,
-        classpath = table.concat(classpath, ";"),
+        classpath = table.concat(classpath, util.path_separator),
         classpath_separator = util.path_separator,
         library_directory = libroot,
         resolution_width = width or "854",
@@ -296,7 +296,7 @@ function M.build(host, workdir, version_id, opts)
             jvm[#jvm + 1] = "-Djava.library.path=" .. natives_dir
         end
         jvm[#jvm + 1] = "-cp"
-        jvm[#jvm + 1] = table.concat(classpath, ";")
+        jvm[#jvm + 1] = table.concat(classpath, util.path_separator)
         if not jvm_has_prefix("-Dminecraft.launcher.brand=") then
             jvm[#jvm + 1] = "-Dminecraft.launcher.brand=" .. launcher_name
         end

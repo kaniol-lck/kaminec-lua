@@ -30,7 +30,7 @@ local function proxy_arg()
     return {}
 end
 
-local curl = env("KAMINEC_CURL") or "curl.exe"
+local curl = env("KAMINEC_CURL") or (util.IS_WINDOWS and "curl.exe" or "curl")
 
 function M.curl() return curl end
 
