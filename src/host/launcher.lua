@@ -1,7 +1,7 @@
--- launcher.lua: compose the java command line and run the game
--- The command is written to run.bat and executed through `cmd /c call`,
--- which avoids cmd.exe's "command starts with a quote" stripping problem.
--- The access token is never printed in full; run.bat is removed afterwards.
+-- launcher.lua: compose the java command line and run the game.
+-- Windows writes run.bat and uses `cmd /c call`; POSIX writes run.sh and uses
+-- `sh`. The access token is never printed in full and the script is removed
+-- after the game exits.
 local util = require("util")
 
 local M = {}
@@ -16,19 +16,31 @@ end
 
 -- Replace the access token value in a command line with *** for display/logs.
 function M.redact(cmd)
-    return (tostring(cmd):gsub('("%-%-accessToken"%s+")[^"]*"', '%1***"'))
+    cmd = tostring(cmd)
+    cmd = cmd:gsub('("%-%-accessToken"%s+")[^"]*"', '%1***"')
+    cmd = cmd:gsub("('%-%-accessToken'%s+')[^']*'", "%1***'")
+    return cmd
 end
 
 function M.run(cmd, workdir, gamedir, logpath)
     print("> " .. M.redact(cmd))
     print("")
-    local bat = util.join(workdir, "run.bat")
-    -- switch to the game directory so relative paths and logs/ land there,
-    -- like the official launcher does
-    util.write(bat, "@echo off\r\ncd /d \"" .. gamedir:gsub("/", "\\") .. "\"\r\n" .. cmd .. "\r\n")
+
+    local script, shell
+    if util.IS_WINDOWS then
+        script = util.join(workdir, "run.bat")
+        -- switch to the game directory so relative paths and logs/ land there,
+        -- like the official launcher does
+        util.write(script, "@echo off\r\ncd /d \"" .. gamedir:gsub("/", "\\") .. "\"\r\n" .. cmd .. "\r\n")
+        shell = 'cmd /c call "' .. script .. '" 2>&1'
+    else
+        script = util.join(workdir, "run.sh")
+        util.write(script, "#!/bin/sh\ncd " .. util.quote(gamedir) .. " || exit 1\nexec " .. cmd .. "\n")
+        shell = "sh " .. util.quote(script) .. " 2>&1"
+    end
 
     local ok, value = pcall(function()
-        local f, err = io.popen('cmd /c call "' .. bat .. '" 2>&1', "r")
+        local f, err = io.popen(shell, "r")
         if not f then error("failed to start java: " .. tostring(err)) end
         local log = io.open(logpath, "wb")
         for line in f:lines() do
@@ -46,8 +58,8 @@ function M.run(cmd, workdir, gamedir, logpath)
         return code or 1
     end)
 
-    -- run.bat contains the raw access token; do not leave it on disk
-    os.remove(bat)
+    -- the script contains the raw access token; do not leave it on disk
+    os.remove(script)
     if not ok then error(value) end
     return value
 end

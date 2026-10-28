@@ -1,14 +1,18 @@
--- util.lua: filesystem + shell helpers (Windows-first, no C modules)
+-- util.lua: cross-platform filesystem + shell helpers (no C modules).
+-- Windows keeps the existing cmd.exe/PowerShell behavior; POSIX uses sh.
 local M = {}
+
+local IS_WINDOWS = package.config:sub(1, 1) == "\\"
+M.IS_WINDOWS = IS_WINDOWS
+M.path_separator = IS_WINDOWS and ";" or ":"
 
 function M.join(...)
     local parts = { ... }
     local out = {}
     for _, p in ipairs(parts) do
         if p and p ~= "" then
-            -- normalize Windows separators: curl config files treat '\' as an
-            -- escape character, so every path we hand to a child process must
-            -- use forward slashes
+            -- curl config files treat '\' as an escape character, so every path
+            -- handed to a child process uses forward slashes on both platforms
             local s = tostring(p):gsub("\\", "/")
             if #out == 0 then
                 out[#out + 1] = s:gsub("[/]+$", "")
@@ -48,9 +52,32 @@ function M.write(path, data)
     f:close()
 end
 
+-- PowerShell/cmd and POSIX shells need different quoting.
+function M.quote(s)
+    s = tostring(s)
+    if IS_WINDOWS then
+        return '"' .. s:gsub('"', '\\"') .. '"'
+    end
+    return "'" .. s:gsub("'", "'\\''") .. "'"
+end
+
 function M.mkdir(path)
-    path = tostring(path):gsub("/", "\\")
-    os.execute('mkdir "' .. path .. '" 2>nul')
+    path = tostring(path)
+    if IS_WINDOWS then
+        path = path:gsub("/", "\\")
+        os.execute('mkdir "' .. path .. '" 2>nul')
+    else
+        os.execute("mkdir -p " .. M.quote(path) .. " 2>/dev/null")
+    end
+end
+
+function M.rmtree(path)
+    path = tostring(path)
+    if IS_WINDOWS then
+        os.execute('rmdir /s /q "' .. path:gsub("/", "\\") .. '" 2>nul')
+    else
+        os.execute("rm -rf " .. M.quote(path) .. " 2>/dev/null")
+    end
 end
 
 function M.dirname(path)
@@ -58,7 +85,7 @@ function M.dirname(path)
 end
 
 function M.cwd()
-    local f = io.popen("cd")
+    local f = io.popen(IS_WINDOWS and "cd" or "pwd")
     local s = f:read("l") or "."
     f:close()
     return (s:gsub("%s+$", ""))
@@ -67,8 +94,17 @@ end
 -- absolute, forward-slash path
 function M.abs(path)
     path = tostring(path)
-    if path:match("^%a:[/\\]") then
-        return (path:gsub("\\", "/"))
+    if IS_WINDOWS then
+        if path:match("^%a:[/\\]") or path:match("^\\\\") then
+            return (path:gsub("\\", "/"))
+        end
+    else
+        if path:sub(1, 1) == "/" then
+            return path
+        end
+        if path:sub(1, 2) == "~/" then
+            path = (os.getenv("HOME") or ".") .. path:sub(2)
+        end
     end
     return M.join(M.cwd(), path)
 end
@@ -77,8 +113,14 @@ function M.basename(path)
     return (tostring(path):match("([^/\\]+)$")) or path
 end
 
-function M.quote(s)
-    return '"' .. tostring(s):gsub('"', '\\"') .. '"'
+function M.sleep(seconds)
+    seconds = math.max(0, math.floor(tonumber(seconds) or 0))
+    if seconds == 0 then return end
+    if IS_WINDOWS then
+        os.execute("ping -n " .. tostring(seconds + 1) .. " 127.0.0.1 >nul")
+    else
+        os.execute("sleep " .. tostring(seconds))
+    end
 end
 
 function M.printf(fmt, ...)

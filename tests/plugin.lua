@@ -16,7 +16,7 @@ end
 
 local root = util.abs("tests/tmp-plugin")
 -- tests must start from a clean instance, otherwise "downloads" is empty
-os.execute('rmdir /s /q "' .. root:gsub("/", "\\") .. '" 2>nul')
+util.rmtree(root)
 local function fixture(name)
     return util.abs("tests/fixtures/" .. name)
 end

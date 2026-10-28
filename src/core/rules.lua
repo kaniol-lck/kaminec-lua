@@ -1,12 +1,40 @@
--- rules.lua: official version-json rule evaluation
+-- rules.lua: official version-json rule evaluation (platform-aware).
 local M = {}
 
-local OS_NAME = "windows"
-local OS_ARCH = "x86_64"
+local IS_WINDOWS = package.config:sub(1, 1) == "\\"
+
+local function uname(flag)
+    local f = io.popen("uname " .. flag .. " 2>/dev/null")
+    if not f then return "" end
+    local s = f:read("l") or ""
+    f:close()
+    return (s:gsub("%s+$", ""))
+end
+
+local OS_NAME, OS_ARCH
+if IS_WINDOWS then
+    OS_NAME = "windows"
+    local pa = (os.getenv("PROCESSOR_ARCHITECTURE") or "AMD64"):upper()
+    OS_ARCH = pa:find("64") and "x86_64" or "x86"
+else
+    OS_NAME = (uname("-s") == "Darwin") and "osx" or "linux"
+    local m = uname("-m")
+    if m == "x86_64" or m == "amd64" then
+        OS_ARCH = "x86_64"
+    elseif m == "aarch64" or m == "arm64" then
+        OS_ARCH = "arm64"
+    else
+        OS_ARCH = m ~= "" and m or "x86_64"
+    end
+end
+
+M.OS_NAME = OS_NAME
+M.OS_ARCH = OS_ARCH
 
 local function arch_matches(arch)
     if arch == "x86" then return OS_ARCH == "x86" end
     if arch == "x86_64" or arch == "amd64" then return OS_ARCH == "x86_64" end
+    if arch == "arm64" or arch == "aarch64" then return OS_ARCH == "arm64" end
     return false
 end
 

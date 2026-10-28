@@ -223,7 +223,13 @@ local zipdir = util.join(root, "zip-roundtrip")
 util.mkdir(zipdir)
 util.write(util.join(zipdir, "dummy.dll"), "natives")
 os.remove(util.join(zipdir, "natives.zip"))
-local made_zip = os.execute('cd /d "' .. zipdir:gsub("/", "\\") .. '" && tar -a -cf natives.zip dummy.dll')
+local made_zip
+if util.IS_WINDOWS then
+    made_zip = os.execute('cd /d "' .. zipdir:gsub("/", "\\") .. '" && tar -a -cf natives.zip dummy.dll')
+else
+    made_zip = os.execute('cd ' .. util.quote(zipdir)
+        .. ' && (zip -q natives.zip dummy.dll || python3 -m zipfile -c natives.zip dummy.dll)')
+end
 if made_zip == true then
     local dest = util.join(root, "zip-roundtrip-out")
     local ok = adapters.cli().extract_zip(util.join(zipdir, "natives.zip"), dest)
@@ -234,12 +240,15 @@ end
 
 print("rules")
 check("nil rules allow", rules.allowed(nil, {}) == true)
-check("allow osx only -> false on windows", rules.allowed({ { action = "allow", os = { name = "osx" } } }, {}) == false)
-check("allow windows -> true", rules.allowed({ { action = "allow", os = { name = "windows" } } }, {}) == true)
-check("disallow osx -> true on windows", rules.allowed({
+local this_os = rules.OS_NAME
+check("allow osx only -> " .. tostring(this_os == "osx"),
+    rules.allowed({ { action = "allow", os = { name = "osx" } } }, {}) == (this_os == "osx"))
+check("allow windows -> " .. tostring(this_os == "windows"),
+    rules.allowed({ { action = "allow", os = { name = "windows" } } }, {}) == (this_os == "windows"))
+check("disallow osx -> " .. tostring(this_os ~= "osx"), rules.allowed({
     { action = "allow" },
     { action = "disallow", os = { name = "osx" } },
-}, {}) == true)
+}, {}) == (this_os ~= "osx"))
 check("feature off filters arg", rules.allowed({ { action = "allow", features = { is_demo_user = true } } }, {}) == false)
 check("feature on keeps arg", rules.allowed({ { action = "allow", features = { is_demo_user = true } } }, { is_demo_user = true }) == true)
 

@@ -24,15 +24,27 @@ end
 
 local function extract_zip(zip, dest)
     util.mkdir(dest)
-    -- Windows 10+ ships bsdtar, which reads zip archives.
-    local tar_cmd = "tar -xf " .. cmd_quote(zip) .. " -C " .. cmd_quote(dest)
-    if shell_ok(tar_cmd) then
+    if util.IS_WINDOWS then
+        -- Windows 10+ ships bsdtar, which reads zip archives.
+        local tar_cmd = "tar -xf " .. cmd_quote(zip) .. " -C " .. cmd_quote(dest)
+        if shell_ok(tar_cmd) then
+            return true
+        end
+        -- Fallback for hosts without tar/libarchive.
+        local ps_cmd = "powershell -NoProfile -NonInteractive -Command \"Expand-Archive -LiteralPath "
+            .. ps_quote(zip) .. " -DestinationPath " .. ps_quote(dest) .. " -Force\""
+        return shell_ok(ps_cmd)
+    end
+
+    -- POSIX: unzip is the common case; bsdtar can read zip on macOS; python3
+    -- is a last resort for minimal containers.
+    if shell_ok("unzip -q -o " .. util.quote(zip) .. " -d " .. util.quote(dest)) then
         return true
     end
-    -- Fallback for hosts without tar/libarchive.
-    local ps_cmd = "powershell -NoProfile -NonInteractive -Command \"Expand-Archive -LiteralPath "
-        .. ps_quote(zip) .. " -DestinationPath " .. ps_quote(dest) .. " -Force\""
-    return shell_ok(ps_cmd)
+    if shell_ok("tar -xf " .. util.quote(zip) .. " -C " .. util.quote(dest)) then
+        return true
+    end
+    return shell_ok("python3 -m zipfile -e " .. util.quote(zip) .. " " .. util.quote(dest))
 end
 
 M.extract_zip = extract_zip

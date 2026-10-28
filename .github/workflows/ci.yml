@@ -6,16 +6,21 @@ on:
   workflow_dispatch:
 
 jobs:
-  windows:
-    name: Windows / Lua 5.4
-    runs-on: windows-latest
+  test:
+    name: ${{ matrix.os }} / Lua 5.4
+    runs-on: ${{ matrix.os }}
     timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [windows-latest, ubuntu-latest]
 
     steps:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Install Lua 5.4 (LuaBinaries)
+      - name: Install Lua 5.4 (Windows)
+        if: runner.os == 'Windows'
         shell: pwsh
         run: |
           $zip = Join-Path $env:RUNNER_TEMP 'lua54.zip'
@@ -28,7 +33,16 @@ jobs:
           "LUA_EXE=$($exe.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
           & $exe.FullName -v
 
-      - name: Offline tests
+      - name: Install Lua 5.4 (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y lua5.4
+          lua5.4 -v
+
+      - name: Offline tests (Windows)
+        if: runner.os == 'Windows'
         shell: cmd
         run: |
           "%LUA_EXE%" tests\run.lua || exit /b 1
@@ -38,3 +52,16 @@ jobs:
           "%LUA_EXE%" tests\launcher.lua || exit /b 1
           "%LUA_EXE%" tests\import.lua || exit /b 1
           "%LUA_EXE%" tests\graph_setup.lua || exit /b 1
+
+      - name: Offline tests (Linux)
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -e
+          lua5.4 tests/run.lua
+          lua5.4 tests/download.lua
+          lua5.4 tests/auth.lua
+          lua5.4 tests/plugin.lua
+          lua5.4 tests/launcher.lua
+          lua5.4 tests/import.lua
+          lua5.4 tests/graph_setup.lua
