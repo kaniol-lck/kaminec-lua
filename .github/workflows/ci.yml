@@ -15,23 +15,25 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Setup Lua 5.4 (MSYS2)
-        uses: msys2/setup-msys2@v2
-        with:
-          msystem: MINGW64
-          install: mingw-w64-x86_64-lua
-
-      - name: Show Lua version
-        shell: cmd
-        run: C:\msys64\mingw64\bin\lua.exe -v
+      - name: Install Lua 5.4 (LuaBinaries)
+        shell: pwsh
+        run: |
+          $zip = Join-Path $env:RUNNER_TEMP 'lua54.zip'
+          $dir = Join-Path $env:RUNNER_TEMP 'lua54'
+          Invoke-WebRequest -Uri 'https://downloads.sourceforge.net/project/luabinaries/5.4.8/Tools%20Executables/lua-5.4.8_Win64_bin.zip' -OutFile $zip -MaximumRetryCount 3 -RetryIntervalSec 2
+          Expand-Archive -Path $zip -DestinationPath $dir -Force
+          $exe = Get-ChildItem $dir -Recurse -Filter 'lua54.exe' | Select-Object -First 1
+          if (-not $exe) { throw 'lua54.exe not found in LuaBinaries zip' }
+          "LUA_EXE=$($exe.FullName)" | Out-File -FilePath $env:GITHUB_ENV -Append -Encoding utf8
+          & $exe.FullName -v
 
       - name: Offline tests
         shell: cmd
         run: |
-          C:\msys64\mingw64\bin\lua.exe tests\run.lua || exit /b 1
-          C:\msys64\mingw64\bin\lua.exe tests\download.lua || exit /b 1
-          C:\msys64\mingw64\bin\lua.exe tests\auth.lua || exit /b 1
-          C:\msys64\mingw64\bin\lua.exe tests\plugin.lua || exit /b 1
-          C:\msys64\mingw64\bin\lua.exe tests\launcher.lua || exit /b 1
-          C:\msys64\mingw64\bin\lua.exe tests\import.lua || exit /b 1
-          C:\msys64\mingw64\bin\lua.exe tests\graph_setup.lua || exit /b 1
+          "%LUA_EXE%" tests\run.lua || exit /b 1
+          "%LUA_EXE%" tests\download.lua || exit /b 1
+          "%LUA_EXE%" tests\auth.lua || exit /b 1
+          "%LUA_EXE%" tests\plugin.lua || exit /b 1
+          "%LUA_EXE%" tests\launcher.lua || exit /b 1
+          "%LUA_EXE%" tests\import.lua || exit /b 1
+          "%LUA_EXE%" tests\graph_setup.lua || exit /b 1
