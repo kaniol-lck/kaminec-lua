@@ -13,6 +13,7 @@
 - 下载任务导出：aria2 input / JSON；`tools/aria2_download.lua` 可选外置下载
 - 服务端 L1/L2 工具：create/download/start/status/log/RCON stop/backup
 - 离线账号、官方启动器 token 导入、Microsoft OAuth 浏览器登录
+- 内置已审核 Azure client id：`login` 不再要求用户配置 client id；老账号仍按自身 client id 刷新
 - 可嵌入的插件 API（`api_version = 1`）
 - Profile 层：全局 defaults、profile CRUD、`--profile` 下载/启动
 - Java 发现与版本校验：`java list`、profile `java_auto`、启动前 major 检查

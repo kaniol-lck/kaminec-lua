@@ -33,6 +33,7 @@ local download = require("download")
 local natives = require("natives")
 local profile = require("profile")
 local java = require("java")
+local oauth_client = require("oauth_client")
 local http = require("http")
 local accounts = require("accounts")
 local auth = require("login")
@@ -90,8 +91,8 @@ local function resolve_profile(opts)
     opts._profile = p
 end
 
--- Azure application (public client) id for the device-code flow.
--- Priority: --client-id > KAMINEC_MSA_CLIENT_ID > <workdir>/msa.json
+-- Azure application (public client) id.
+-- Priority: --client-id > KAMINEC_MSA_CLIENT_ID > <workdir>/msa.json > built-in.
 local function client_id_of(opts, workdir)
     if opts["client-id"] and opts["client-id"] ~= true then return opts["client-id"] end
     local env = os.getenv("KAMINEC_MSA_CLIENT_ID")
@@ -103,7 +104,7 @@ local function client_id_of(opts, workdir)
             return data.client_id
         end
     end
-    return nil
+    return oauth_client.DEFAULT_CLIENT_ID
 end
 
 -- Load a stored Microsoft account and refresh its Minecraft token if needed.
@@ -111,7 +112,20 @@ local function load_account(opts, workdir)
     local store = accounts.load(accounts.path(workdir))
     local acct = accounts.find(store, opts.account)
     if not acct then error("账号不存在: " .. tostring(opts.account)) end
-    local cid = client_id_of(opts, workdir) or acct.client_id
+    local cid
+    local explicit_cid = opts["client-id"] and opts["client-id"] ~= true
+    local env_cid = os.getenv("KAMINEC_MSA_CLIENT_ID")
+    if explicit_cid then
+        cid = opts["client-id"]
+    elseif env_cid and env_cid ~= "" then
+        cid = env_cid
+    elseif acct.client_id and acct.client_id ~= "" then
+        -- Refresh tokens are bound to the client id that issued them; do not
+        -- silently replace an old account's client id with the built-in one.
+        cid = acct.client_id
+    else
+        cid = client_id_of(opts, workdir)
+    end
     if acct.auth_mode ~= "imported" then
         if not cid or cid == "" then
             error("缺少 Azure client id（--client-id / KAMINEC_MSA_CLIENT_ID / "
@@ -703,12 +717,13 @@ local help_text = {
         "Prints the latest release/snapshot and the newest releases.",
     },
     login = {
-        "usage: login --dir <launcher-root> [--client-id <azure-id>]",
-        "Windows uses browser + loopback; Linux uses device code.",
+        "usage: login --dir <launcher-root> [--device-code] [--client-id <azure-id>]",
+        "Uses the built-in Azure client id; no app registration is required.",
+        "Windows uses browser + loopback; Linux/--device-code uses device code.",
     },
     ["setup-app"] = {
         "usage: setup-app --dir <launcher-root> [--client-id <azure-id>]",
-        "Stores the Azure application id in <launcher-root>/msa.json.",
+        "Optional: create a custom Azure app and store its id in <launcher-root>/msa.json.",
     },
     import = {
         "usage: import --dir <launcher-root> [--yes]",

@@ -30,6 +30,7 @@ local natives = require("natives")
 local accounts = require("accounts")
 local importer = require("accounts_import")
 local auth = require("login")
+local oauth_client = require("oauth_client")
 local account = require("account")
 
 local M = {}
@@ -132,6 +133,7 @@ function M.new(host, opts)
         local acct = accounts.find(store, name)
         if not acct then return nil, "账号不存在: " .. tostring(name) end
         local cid = client_id or self.opts.client_id or acct.client_id
+            or oauth_client.DEFAULT_CLIENT_ID
         if acct.auth_mode ~= "imported" then
             if not cid or cid == "" then
                 return nil, "缺少 Azure client id"

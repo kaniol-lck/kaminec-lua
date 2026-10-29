@@ -12,7 +12,7 @@
   - Forge 1.20.1 / NeoForge 21.1.209 / Fabric 0.20.1
   - Forge 1.12.2（Java 8）
 - 自动下载、SHA1 校验、断点续传、natives 解压、旧版本格式回退
-- 离线账号 / 官方启动器 token 导入 / Microsoft OAuth 浏览器登录
+- 离线账号 / 官方启动器 token 导入 / Microsoft OAuth 浏览器或设备码登录（内置 client id）
 
 ## 功能
 
@@ -82,17 +82,24 @@ Linux：
    kaminec.bat import --dir .minecraft --yes
    ```
    只支持官方启动器，不扫描其他启动器；不保存 refresh token。
-3. **Microsoft OAuth**：需要自己的 Azure 应用 client id：
+3. **Microsoft OAuth（内置 client id，无需注册 Azure 应用）**：
    ```bat
    :: Windows：浏览器授权 + loopback
-   kaminec.bat login --dir .minecraft --client-id <your-client-id>
+   kaminec.bat login --dir .minecraft
 
-   :: Linux：自动使用设备码（不需要本地回调服务）
-   ./kaminec.sh login --dir .minecraft --client-id <your-client-id>
+   :: 设备码（Windows 也可用；Linux 自动使用）
+   kaminec.bat login --dir .minecraft --device-code
+
+   :: Linux
+   ./kaminec.sh login --dir .minecraft
    ```
-   client id 也可以写入 `<实例目录>/msa.json`，或通过 `KAMINEC_MSA_CLIENT_ID` 环境变量提供。
 
-> 本项目不内置任何 Azure client id。自己的应用如果尚未获得 Minecraft API 批准，`login_with_xbox` 会返回 403；此时请使用离线账号或官方启动器导入。
+内置 Azure 应用已通过 Minecraft API 人工审核，`login` 不再需要 `--client-id`。
+仍可按优先级覆盖：
+`--client-id` → `KAMINEC_MSA_CLIENT_ID` → `<实例目录>/msa.json`。
+
+如果确实要使用自己的 Azure 应用，仍可用 `setup-app` 生成并写入 `msa.json`。
+已有账号的 refresh token 会继续使用它自己的 `client_id`，不会因内置默认值而失效。
 
 `login --live` 是早期实验路径，当前不可用（Xbox Live 返回 401）。
 
