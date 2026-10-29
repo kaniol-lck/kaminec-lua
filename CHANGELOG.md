@@ -35,7 +35,5 @@
 
 ### Known limitations
 
-- 仅支持 Windows
-- 微软登录需要自己的 Azure client id；新应用需 Minecraft API 审核
-- `login --live` 不可用（Xbox Live 401）
-- 不自动下载/管理 Java，需用户提供 `--java` 或 PATH 中的 `java`
+- macOS 仅 CI 验证，无真机启动测试
+- 不自动下载/管理 Java，需用户提供 `--java` 或由启动器自动发现

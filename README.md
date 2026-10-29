@@ -101,8 +101,6 @@ Linux：
 如果确实要使用自己的 Azure 应用，仍可用 `setup-app` 生成并写入 `msa.json`。
 已有账号的 refresh token 会继续使用它自己的 `client_id`，不会因内置默认值而失效。
 
-`login --live` 是早期实验路径，当前不可用（Xbox Live 返回 401）。
-
 ## 安全说明
 
 - 登录 token 以明文保存在 `<实例目录>/accounts.json`，只用于本机启动。
