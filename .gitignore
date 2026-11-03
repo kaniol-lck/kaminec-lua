@@ -12,6 +12,8 @@ docs/dev/
 *.part
 plan.json
 *.plan.json
+__pycache__/
+*.pyc
 
 # logs
 *.log

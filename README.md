@@ -180,6 +180,19 @@ aria2 任务包含 `dir`、相对 `out`、`url`、`checksum=sha-1=...`、`contin
 外部下载完成后，工具会调用核心 `download --verify --repair` 收尾；也可以手动执行。
 核心不直接调用 aria2，避免把可选依赖带进主程序。
 
+## WebUI（可选，Python 3）
+
+轻量本地 WebUI，Python 标准库即可，不需要 npm/构建步骤：
+
+```bat
+python tools\webui\server.py --dir D:\dev\kaminec-spike\.minecraft --port 8765 --open
+```
+
+- 只绑定 `127.0.0.1`，API 需要 server 启动时生成的 token
+- 可查看 profile、创建 profile、下载、启动、查看任务输出、探测 Java
+- 真正的下载/启动仍调用 Lua CLI，WebUI 不重复实现启动逻辑
+- 当前不含账号登录界面；需要时先用 CLI `login`
+
 ## 服务器（L1/L2，tools）
 
 服务端管理是独立工具，不在客户端核心 CLI 里；当前只支持 vanilla：

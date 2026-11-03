@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Kaminec-Lua WebUI</title>
+  <link rel="stylesheet" href="/style.css">
+</head>
+<body>
+  <header>
+    <div>
+      <strong>Kaminec-Lua</strong>
+      <span class="muted">WebUI</span>
+    </div>
+    <div class="root" id="root">loading...</div>
+  </header>
+
+  <main>
+    <section>
+      <div class="section-head">
+        <h2>Profiles</h2>
+        <button id="refresh" class="ghost">刷新</button>
+      </div>
+      <div id="profiles" class="cards"></div>
+      <p id="profiles-error" class="error"></p>
+
+      <form id="create" class="create">
+        <h3>新建 profile</h3>
+        <input id="version" placeholder="版本，如 1.21.8" required>
+        <input id="name" placeholder="显示名称（可选）">
+        <button type="submit">创建</button>
+      </form>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>Java</h2>
+        <button id="java" class="ghost">探测</button>
+      </div>
+      <pre id="java-output" class="output">点击“探测”查看已安装 Java。</pre>
+    </section>
+
+    <section>
+      <div class="section-head">
+        <h2>任务</h2>
+        <span id="job-status" class="muted"></span>
+      </div>
+      <pre id="job-output" class="output">选择 profile 后点击 Download 或 Launch。</pre>
+    </section>
+  </main>
+
+  <script src="/app.js"></script>
+</body>
+</html>
