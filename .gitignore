@@ -14,6 +14,7 @@ plan.json
 *.plan.json
 __pycache__/
 *.pyc
+.webui-jobs/
 
 # logs
 *.log
